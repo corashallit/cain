@@ -1,0 +1,1318 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CAIN — Talismains</title>
+        <!-- Fonts: Source Sans 3 ≈ Acumin Pro (body), Grenze Gotisch ≈ Cuasigothic (details/numbers) -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Grenze+Gotisch:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --crimson: #c1121f;
+                --ink: #0a0a0a;
+                --font-body:
+                    "Source Sans 3", "Acumin Pro", "Helvetica Neue", system-ui,
+                    sans-serif;
+                --font-detail: "Grenze Gotisch", "Cuasigothic", Georgia, serif;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+            }
+            body {
+                background: #000;
+                color: #eee;
+                font-family: var(--font-body);
+                overflow: hidden;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            /* ---- background layers ---- */
+            #bg {
+                position: fixed;
+                inset: 0;
+                background-position: center;
+                background-size: cover;
+                background-repeat: no-repeat;
+                z-index: 0;
+                transition: opacity 0.4s ease;
+            }
+            #bgdim {
+                position: fixed;
+                inset: 0;
+                z-index: 1;
+                pointer-events: none;
+                background: radial-gradient(
+                    ellipse at center,
+                    rgba(0, 0, 0, 0.45) 0%,
+                    rgba(0, 0, 0, 0.78) 100%
+                );
+            }
+            /* faint blood vignette */
+            #vig {
+                position: fixed;
+                inset: 0;
+                z-index: 1;
+                pointer-events: none;
+                box-shadow: inset 0 0 220px 40px rgba(120, 0, 0, 0.3);
+            }
+
+            /* ---- stage where talismains live ---- */
+            #stage {
+                position: fixed;
+                inset: 0;
+                z-index: 5;
+            }
+
+            /* ---- bottom-right detail decoration ---- */
+            #detail {
+                position: fixed;
+                right: 0;
+                bottom: 0;
+                z-index: 2;
+                max-height: 34vh;
+                max-width: 32vw;
+                opacity: 0.82;
+                pointer-events: auto;
+                cursor: pointer;
+                filter: drop-shadow(0 0 18px rgba(0, 0, 0, 0.8));
+                transition: opacity 0.3s ease;
+            }
+            #detail:hover {
+                opacity: 1;
+            }
+
+            /* ---- toolbar ---- */
+            #bar {
+                position: fixed;
+                top: 14px;
+                left: 14px;
+                z-index: 50;
+                display: flex;
+                gap: 8px;
+                align-items: flex-start;
+                flex-wrap: wrap;
+                opacity: 0.22;
+                transition: opacity 0.4s ease;
+            }
+            /* fade the toolbar out until it's hovered (or a menu/help panel is open) */
+            #bar:hover,
+            #bar.menuopen {
+                opacity: 1;
+            }
+            .btn {
+                background: rgba(15, 15, 15, 0.82);
+                color: #e8e8e8;
+                border: 1px solid #3a3a3a;
+                border-radius: 4px;
+                padding: 8px 12px;
+                font-family: inherit;
+                font-size: 13px;
+                letter-spacing: 0.04em;
+                cursor: pointer;
+                backdrop-filter: blur(3px);
+                transition:
+                    border-color 0.15s,
+                    background 0.15s,
+                    color 0.15s;
+            }
+            .btn:hover {
+                border-color: var(--crimson);
+                color: #fff;
+                background: rgba(40, 8, 10, 0.9);
+            }
+            .btn.accent {
+                border-color: #5a1418;
+            }
+
+            #bgwrap {
+                position: relative;
+            }
+            #bgmenu {
+                position: absolute;
+                top: 42px;
+                left: 0;
+                background: rgba(12, 12, 12, 0.94);
+                border: 1px solid #3a3a3a;
+                border-radius: 6px;
+                padding: 10px;
+                width: 300px;
+                display: none;
+                backdrop-filter: blur(5px);
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+            }
+            #bgmenu.open {
+                display: block;
+            }
+            #bgmenu .row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            #bgmenu .thumb {
+                width: 80px;
+                height: 54px;
+                object-fit: cover;
+                border: 1px solid #444;
+                border-radius: 4px;
+                cursor: pointer;
+                transition:
+                    border-color 0.15s,
+                    transform 0.12s;
+            }
+            #bgmenu .thumb:hover {
+                border-color: var(--crimson);
+                transform: scale(1.04);
+            }
+            #bgmenu .thumb.sel {
+                border-color: var(--crimson);
+                box-shadow: 0 0 0 2px rgba(193, 18, 31, 0.5);
+            }
+            #bgmenu .none {
+                width: 80px;
+                height: 54px;
+                border: 1px dashed #555;
+                border-radius: 4px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                color: #999;
+            }
+            #bgmenu .none:hover {
+                border-color: var(--crimson);
+                color: #fff;
+            }
+            #bgmenu label {
+                display: block;
+                font-size: 11px;
+                color: #aaa;
+                margin: 10px 0 4px;
+            }
+            #bgmenu input[type="range"] {
+                width: 100%;
+                accent-color: var(--crimson);
+            }
+            #bgmenu .fitrow {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            #bgmenu .fitrow button {
+                flex: 1 1 28%;
+                padding: 6px 4px;
+                font-size: 11px;
+                font-family: inherit;
+                letter-spacing: 0.02em;
+                background: rgba(20, 20, 20, 0.85);
+                color: #cfcfcf;
+                border: 1px solid #3a3a3a;
+                border-radius: 4px;
+                cursor: pointer;
+                transition:
+                    border-color 0.15s,
+                    background 0.15s,
+                    color 0.15s;
+            }
+            #bgmenu .fitrow button:hover {
+                border-color: var(--crimson);
+                color: #fff;
+            }
+            #bgmenu .fitrow button.sel {
+                border-color: var(--crimson);
+                background: rgba(70, 10, 12, 0.92);
+                color: #fff;
+            }
+
+            /* ---- talismain card ---- */
+            /* No z-index on .card on purpose: cards must NOT form their own stacking
+     context, so every .strip (z-index:2) paints above every .label (z-index:1)
+     globally — a label can never cover an adjacent talismain's clickable area.
+     Front-to-back ordering among cards is handled by DOM order (see bringFront). */
+            .card {
+                position: absolute;
+                display: flex;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .strip {
+                position: relative;
+                cursor: grab;
+                flex: 0 0 auto;
+                z-index: 2;
+            }
+            .strip.grabbing {
+                cursor: grabbing;
+            }
+            .strip img.paper {
+                display: block;
+                height: var(--h, 360px);
+                width: auto;
+                -webkit-user-drag: none;
+                pointer-events: none;
+                filter: drop-shadow(3px 6px 10px rgba(0, 0, 0, 0.75));
+            }
+            .strip.cut {
+                animation: shake 0.22s ease;
+            }
+            @keyframes shake {
+                0% {
+                    transform: translate(0, 0);
+                }
+                20% {
+                    transform: translate(-2px, 1px) rotate(-0.4deg);
+                }
+                45% {
+                    transform: translate(2px, -1px) rotate(0.5deg);
+                }
+                70% {
+                    transform: translate(-1px, 1px);
+                }
+                100% {
+                    transform: translate(0, 0);
+                }
+            }
+
+            /* slash counter near the top, just after the art — count / target (N) */
+            .num {
+                position: absolute;
+                top: 12%;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                align-items: baseline;
+                justify-content: center;
+                font-family: var(--font-detail);
+                font-size: 24px;
+                font-weight: 600;
+                color: #7c0a11;
+                line-height: 1;
+                text-shadow:
+                    0 0 3px rgba(255, 255, 255, 0.95),
+                    0 0 2px rgba(255, 255, 255, 0.95);
+                z-index: 5;
+                white-space: nowrap;
+                padding: 1px 3px;
+                border-radius: 3px;
+            }
+            .num .count {
+                font-size: 30px;
+            }
+            .num .sep {
+                opacity: 0.65;
+                margin: 0 2px;
+                font-weight: 400;
+            }
+            .num .target {
+                outline: none;
+                cursor: text;
+                min-width: 0.7em;
+                text-align: left;
+                border-radius: 3px;
+                padding: 0 2px;
+            }
+            .num .target:hover {
+                background: rgba(255, 255, 255, 0.35);
+            }
+            .num .target:focus {
+                background: rgba(255, 255, 255, 0.6);
+                color: #a00;
+            }
+            .num .target:empty:not(:focus):before {
+                content: "—";
+                color: #7c0a11;
+                opacity: 0.45;
+            }
+
+            /* slash overlay layer */
+            .slashes {
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                z-index: 4;
+                overflow: visible;
+            }
+            svg.slash {
+                position: absolute;
+                overflow: visible;
+                will-change: transform;
+            }
+            svg.slash.dying {
+                animation: slashOut 0.22s ease forwards;
+            }
+            @keyframes slashOut {
+                to {
+                    opacity: 0;
+                    transform: var(--t) scale(0.6);
+                }
+            }
+
+            /* text label next to talismain — shrinks to its content so a word or two
+     stays tiny; sits BELOW strips (z-index:1) so it never blocks clicks. */
+            .label {
+                position: relative;
+                z-index: 1;
+                align-self: flex-start;
+                margin-top: 11%;
+                width: max-content;
+                max-width: 190px;
+                max-height: 62vh;
+                overflow-y: auto;
+                color: #f2f2f2;
+                font-size: 15px;
+                line-height: 1.4;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                outline: none;
+                cursor: text;
+                text-shadow:
+                    0 1px 4px #000,
+                    0 0 8px rgba(0, 0, 0, 0.85);
+                border-left: 2px solid rgba(193, 18, 31, 0);
+                padding-left: 0;
+                transition:
+                    border-color 0.2s,
+                    padding-left 0.2s;
+            }
+            .label:hover,
+            .label:focus {
+                border-left-color: rgba(193, 18, 31, 0.7);
+                padding-left: 8px;
+            }
+            /* when empty, collapse to a small unobtrusive mark instead of a wide hint */
+            .label:empty {
+                width: 1.1em;
+                opacity: 0.85;
+            }
+            .label:empty:before {
+                content: "✎";
+                color: #5a5a5a;
+                font-size: 13px;
+            }
+            .label:empty:hover,
+            .label:empty:focus {
+                width: max-content;
+            }
+            .label:empty:hover:before,
+            .label:empty:focus:before {
+                content: "name / notes…";
+                color: #8a8a8a;
+            }
+
+            /* per-card hover controls */
+            /* controls float just ABOVE the top of the talismain (clear of the seal art
+     and the label). The transparent padding-bottom bridges the gap down to the
+     strip, so moving up onto them never crosses a dead zone and they don't
+     vanish — the hit-box just extends a little above the visible talismain. */
+            .ctrls {
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 5px;
+                padding-bottom: 7px;
+                opacity: 0;
+                transition: opacity 0.15s;
+                z-index: 7;
+                pointer-events: none;
+            }
+            .card:hover .ctrls {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            .ctrls button {
+                width: 22px;
+                height: 22px;
+                border-radius: 50%;
+                border: 1px solid #444;
+                background: rgba(15, 15, 15, 0.9);
+                color: #ddd;
+                cursor: pointer;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                line-height: 1;
+            }
+            .ctrls button:hover {
+                border-color: var(--crimson);
+                color: #fff;
+                background: #2a0809;
+            }
+
+            #help {
+                position: relative;
+            }
+            #helpBtn {
+                cursor: help;
+                font-weight: 700;
+            }
+            #helpPanel {
+                position: absolute;
+                top: calc(100% + 6px);
+                right: 0;
+                width: 440px;
+                background: rgba(12, 12, 12, 0.94);
+                border: 1px solid #3a3a3a;
+                border-radius: 6px;
+                padding: 12px 14px;
+                font-size: 12px;
+                color: #bbb;
+                line-height: 1.75;
+                opacity: 0;
+                pointer-events: none;
+                transform: translateY(-6px);
+                transition:
+                    opacity 0.18s ease,
+                    transform 0.18s ease;
+                backdrop-filter: blur(5px);
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+            }
+            #help:hover #helpPanel {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            #helpPanel b {
+                color: #c98;
+                font-weight: 400;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="bg"></div>
+        <div id="bgdim"></div>
+        <div id="vig"></div>
+
+        <div id="stage"></div>
+        <img id="detail" alt="" title="click to shuffle corner art" />
+
+        <div id="bar">
+            <button class="btn accent" id="addBtn">✛ Add Talismain</button>
+            <div id="bgwrap">
+                <button class="btn" id="bgBtn">Backgrounds ▾</button>
+                <div id="bgmenu">
+                    <div class="row" id="bgRow"></div>
+                    <label>Placement</label>
+                    <div class="fitrow" id="bgFitRow">
+                        <button data-fit="cover">⤢ Fill</button>
+                        <button data-fit="contain">▣ Fit</button>
+                        <button data-fit="top">⌃ Top</button>
+                        <button data-fit="bottom">⌄ Bottom</button>
+                        <button data-fit="left">‹ Left</button>
+                        <button data-fit="right">› Right</button>
+                    </div>
+                    <label>Background dim</label>
+                    <input
+                        type="range"
+                        id="bgDim"
+                        min="0"
+                        max="90"
+                        value="55"
+                    />
+                </div>
+            </div>
+            <button class="btn" id="shuffleBtn">⟳ Corner Art</button>
+            <button class="btn" id="clearBtn">✕ Clear All</button>
+            <div id="help">
+                <button class="btn" id="helpBtn" aria-label="instructions">
+                    ?
+                </button>
+                <div id="helpPanel">
+                    <b>Drag</b> a talismain to move it · <b>Click</b> it to
+                    carve a slash · <b>Right-click</b> removes a slash · the
+                    counter tracks <b>slashes / N</b>; <b>click the N</b> to set
+                    the target · <b>Click beside it</b> to add text ·
+                    <b>Ctrl/⌘ + scroll</b> over one to resize · Hover a strip
+                    for <b>swap art / delete</b>.
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const ROOT = "reference/";
+            // These curated lists are the fallback used when the page is opened
+            // as a plain file:// document (browsers block folder listing there).
+            // Served through the launcher's local web server, loadFolders() below
+            // replaces them with a live read of the folders, so images you drop
+            // into reference/{talismains,details,backgrounds} show up on refresh.
+            let TALISMAINS = [
+                "CAIN_1.4-0471-p079.png",
+                "CAIN_1.4-0505-p081.png",
+                "CAIN_1.4-0506-p081.png",
+                "CAIN_1.4-0507-p081.png",
+                "CAIN_1.4-0508-p081.png",
+                "CAIN_1.4-0509-p081.png",
+                "CAIN_1.4-0510-p081.png",
+                "CAIN_1.4-0513-p081.png",
+                "CAIN_1.4-0531-p081.png",
+                "empty.png",
+            ].map((f) => ROOT + "talismains/" + f);
+
+            let DETAILS = [
+                "CAIN_1.4-0007-p006.png",
+                "CAIN_1.4-0009-p006.png",
+                "CAIN_1.4-0010-p006.png",
+                "CAIN_1.4-0023-p009.png",
+                "CAIN_1.4-0086-p020.png",
+                "CAIN_1.4-0147-p027.png",
+                "CAIN_1.4-0152-p028.png",
+                "CAIN_1.4-0188-p031.png",
+                "CAIN_1.4-0197-p031.png",
+                "CAIN_1.4-0216-p034.png",
+                "CAIN_1.4-0218-p034.png",
+                "CAIN_1.4-0242-p036.png",
+                "CAIN_1.4-0243-p036.png",
+                "CAIN_1.4-0256-p037.png",
+                "CAIN_1.4-0273-p038.png",
+                "CAIN_1.4-0320-p046.png",
+                "CAIN_1.4-0428-p071.png",
+                "CAIN_1.4-0429-p071.png",
+                "CAIN_1.4-0430-p071.png",
+                "CAIN_1.4-0431-p071.png",
+                "CAIN_1.4-0457-p078.png",
+                "gamesforfreaks_issue2.3-0138-p016.png",
+                "gamesforfreaks_issue3.1-0026-p004.png",
+                "gamesforfreaks_issue3.1-0027-p004.png",
+            ].map((f) => ROOT + "details/" + f);
+
+            let BACKGROUNDS = [
+                "CAIN_1.4-0436-p073.png",
+                "gamesforfreaks_issue1.3-0063-p010.png",
+                "gamesforfreaks_issue1.3-0066-p011.png",
+                "gamesforfreaks_issue3.1-0118-p017.png",
+                "gamesforfreaks_issue3.1-0218-p023.png",
+            ].map((f) => ROOT + "backgrounds/" + f);
+
+            /* ---------- live folder loading (served over http) ----------
+               When the page is opened through the local server, the browser
+               can fetch a directory and get an auto-generated index listing.
+               We parse the <a href> links, keep the images, and use them in
+               place of the curated arrays. On file:// the fetch throws and we
+               silently keep the fallback lists, so double-clicking still works. */
+            const IMG_RE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i;
+            // files living in a folder that should NOT be offered as choices
+            const FOLDER_EXCLUDE = {
+                talismains: new Set(["slashes.png"]), // the reference image, not a strip
+            };
+            async function listDir(sub) {
+                try {
+                    const res = await fetch(ROOT + sub + "/", {
+                        cache: "no-store",
+                    });
+                    if (!res.ok) return null;
+                    if (!/html/i.test(res.headers.get("content-type") || ""))
+                        return null;
+                    const doc = new DOMParser().parseFromString(
+                        await res.text(),
+                        "text/html",
+                    );
+                    const ex = FOLDER_EXCLUDE[sub] || new Set();
+                    const names = Array.from(doc.querySelectorAll("a[href]"))
+                        .map((a) => a.getAttribute("href") || "")
+                        .filter(
+                            (h) =>
+                                h &&
+                                !h.startsWith("?") &&
+                                !h.startsWith("/") &&
+                                !h.includes("../"),
+                        )
+                        .map((h) => h.replace(/\/+$/, ""))
+                        .filter((h) => IMG_RE.test(h))
+                        .filter((h) => !ex.has(decodeURIComponent(h)));
+                    const uniq = Array.from(new Set(names)).sort((a, b) =>
+                        a.toLowerCase().localeCompare(b.toLowerCase()),
+                    );
+                    return uniq.length
+                        ? uniq.map((h) => ROOT + sub + "/" + h)
+                        : null;
+                } catch (e) {
+                    return null; // file:// or no listing available -> use fallback
+                }
+            }
+            async function loadFolders() {
+                const [tal, det, bg] = await Promise.all([
+                    listDir("talismains"),
+                    listDir("details"),
+                    listDir("backgrounds"),
+                ]);
+                if (tal) TALISMAINS = tal;
+                if (det) DETAILS = det;
+                if (bg) BACKGROUNDS = bg;
+            }
+
+            const stage = document.getElementById("stage");
+            const rnd = (a, b) => a + Math.random() * (b - a);
+            const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+            let state = {
+                cards: [],
+                bg: null,
+                bgDim: 55,
+                bgFit: "cover",
+                detail: null,
+            };
+            let zTop = 10;
+            let nextId = 1;
+            let addOffset = 0;
+
+            /* ---------------- persistence ---------------- */
+            function save() {
+                try {
+                    localStorage.setItem(
+                        "cain_talismains",
+                        JSON.stringify(state),
+                    );
+                } catch (e) {}
+            }
+            function load() {
+                try {
+                    const s = JSON.parse(
+                        localStorage.getItem("cain_talismains"),
+                    );
+                    if (s && s.cards) return s;
+                } catch (e) {}
+                return null;
+            }
+
+            /* ---------------- slash generation ----------------
+   A slash is a BUNDLE of separate pure-red strokes (like the CAIN slashes.png):
+   one or two crisp hairlines + a couple of thicker brush strokes, all tapered
+   to sharp points, semi-transparent, and dry-brush textured (streaky gaps) via
+   reusable SVG filters. No dark outline — every stroke is red. */
+            const FILTER_VARIANTS = 6;
+
+            // Shared, reusable filters (one set of variants for all slashes — far cheaper
+            // than a turbulence filter per slash). "sltex" = dry-brush texture (streaky
+            // transparency + rough edges) for the thick strokes; "slsharp" = a light
+            // roughen only, keeping the hairlines crisp and continuous.
+            (function injectFilters() {
+                const NS = "http://www.w3.org/2000/svg";
+                const svg = document.createElementNS(NS, "svg");
+                svg.setAttribute("width", "0");
+                svg.setAttribute("height", "0");
+                svg.setAttribute("aria-hidden", "true");
+                svg.style.cssText =
+                    "position:absolute;width:0;height:0;overflow:hidden;";
+                let defs = "";
+                for (let i = 0; i < FILTER_VARIANTS; i++) {
+                    defs += `
+    <filter id="sltex${i}" x="-15%" y="-180%" width="130%" height="460%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="${(0.018 + 0.004 * i).toFixed(3)} ${(0.42 + 0.04 * i).toFixed(3)}" numOctaves="2" seed="${i * 7 + 3}" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  2.0 0 0 0 -0.55" result="m"/>
+      <feComposite in="SourceGraphic" in2="m" operator="in" result="tx"/>
+      <feDisplacementMap in="tx" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="slsharp${i}" x="-15%" y="-180%" width="130%" height="460%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="${(0.05 + 0.006 * i).toFixed(3)} 0.18" numOctaves="2" seed="${i * 5 + 1}" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.25 0 0 0 -0.12" result="m"/>
+      <feComposite in="SourceGraphic" in2="m" operator="in" result="tx"/>
+      <feDisplacementMap in="tx" in2="n" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>`;
+                }
+                svg.innerHTML = `<defs>${defs}</defs>`;
+                document.body.appendChild(svg);
+            })();
+
+            // one tapered "spindle" stroke (filled outline that narrows to sharp tips)
+            function spindlePath(
+                len,
+                x0,
+                cy,
+                amp,
+                phase,
+                drift,
+                maxHalf,
+                taperPow,
+            ) {
+                const segs = 16,
+                    pts = [];
+                for (let i = 0; i <= segs; i++) {
+                    const t = i / segs;
+                    const x = x0 + t * len;
+                    const y =
+                        cy +
+                        Math.sin(t * Math.PI * 1.4 + phase) * amp +
+                        drift * (t - 0.5) * 2;
+                    pts.push([x, y, t]);
+                }
+                const c01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+                const half = (t) =>
+                    maxHalf * Math.pow(Math.sin(Math.PI * c01(t)), taperPow);
+                const top = [],
+                    bot = [];
+                for (let i = 0; i < pts.length; i++) {
+                    const [x, y, t] = pts[i];
+                    const p = pts[Math.max(0, i - 1)],
+                        q = pts[Math.min(pts.length - 1, i + 1)];
+                    let tx = q[0] - p[0],
+                        ty = q[1] - p[1];
+                    const m = Math.hypot(tx, ty) || 1;
+                    tx /= m;
+                    ty /= m;
+                    const nx = -ty,
+                        ny = tx,
+                        hw = half(t);
+                    top.push([x + nx * hw, y + ny * hw]);
+                    bot.push([x - nx * hw, y - ny * hw]);
+                }
+                const ring = top.concat(bot.reverse());
+                let d = `M ${ring[0][0].toFixed(1)} ${ring[0][1].toFixed(1)}`;
+                for (let i = 1; i < ring.length; i++)
+                    d += ` L ${ring[i][0].toFixed(1)} ${ring[i][1].toFixed(1)}`;
+                return d + " Z";
+            }
+
+            const REDS = [
+                "#e60a02",
+                "#ff2a16",
+                "#d40600",
+                "#f5160a",
+                "#c50400",
+            ];
+            // build the bundle: a few CLOSELY-OVERLAPPING textured thick strokes that read
+            // as one mark, plus exactly ONE crisp sharp hairline. Everything shares the
+            // same axis (small offsets only) so a single slash never reads as several.
+            function makeSlash(len) {
+                const H = 46,
+                    cy = H / 2;
+                const w = Math.ceil(len * 1.45) + 16,
+                    cx = w / 2;
+                const phase = rnd(0, Math.PI * 2),
+                    drift = rnd(-2.5, 2.5),
+                    amp = rnd(1.2, 2.8);
+                const baseOff = rnd(-1.5, 1.5); // the whole bundle's centre line
+                const thick = [],
+                    hair = [];
+                // 2–3 thick strokes stacked almost on top of each other (tiny offsets) so
+                // they build one textured body rather than parallel lines
+                const nThick = 2 + (Math.random() < 0.6 ? 1 : 0);
+                for (let k = 0; k < nThick; k++) {
+                    const L = len * rnd(0.86, 1.0);
+                    thick.push({
+                        d: spindlePath(
+                            L,
+                            cx - L / 2 + rnd(-2, 2),
+                            cy + baseOff + rnd(-1.4, 1.4),
+                            amp * rnd(0.85, 1.1),
+                            phase + rnd(-0.35, 0.35),
+                            drift,
+                            rnd(2.2, 3.6),
+                            0.55,
+                        ),
+                        fill: REDS[[0, 2, 3][k % 3]],
+                        opacity: rnd(0.78, 0.87),
+                    });
+                }
+                // exactly ONE sharp hairline, same axis, with longer tails — the readable cut
+                const L = len * rnd(1.05, 1.35);
+                hair.push({
+                    d: spindlePath(
+                        L,
+                        cx - L / 2 + rnd(-2, 2),
+                        cy + baseOff + rnd(-1.6, 1.6),
+                        amp * rnd(0.9, 1.15),
+                        phase + rnd(-0.25, 0.25),
+                        drift * rnd(0.9, 1.2),
+                        rnd(0.5, 0.85),
+                        0.42,
+                    ),
+                    fill: REDS[1],
+                    opacity: rnd(0.92, 0.99),
+                });
+                return { thick, hair, w, h: H };
+            }
+
+            // build an svg slash element from stored data, positioned at the click point.
+            function buildSlash(data, anim) {
+                const { thick, hair, w, h, left, top, rot, seed } = data;
+                const NS = "http://www.w3.org/2000/svg";
+                const svg = document.createElementNS(NS, "svg");
+                svg.setAttribute("class", "slash");
+                svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+                svg.style.width = w + "px";
+                svg.style.height = h + "px";
+                svg.style.left = left + "px";
+                svg.style.top = top + "px";
+                const tf = `translate(-50%,-50%) rotate(${rot}deg)`;
+                svg.style.transform = tf;
+                svg.style.setProperty("--t", tf);
+
+                const v = (seed || 0) % FILTER_VARIANTS;
+                const tp = (thick || [])
+                    .map(
+                        (s) =>
+                            `<path d="${s.d}" fill="${s.fill}" fill-opacity="${s.opacity}"/>`,
+                    )
+                    .join("");
+                const hp = (hair || [])
+                    .map(
+                        (s) =>
+                            `<path d="${s.d}" fill="${s.fill}" fill-opacity="${s.opacity}"/>`,
+                    )
+                    .join("");
+                svg.innerHTML = `<g filter="url(#sltex${v})">${tp}</g><g filter="url(#slsharp${v})">${hp}</g>`;
+
+                if (anim) {
+                    // the "cut": sweep a reveal left-to-right along the slash
+                    svg.style.clipPath = "inset(-90% 100% -90% -8%)";
+                    svg.getBoundingClientRect();
+                    requestAnimationFrame(() => {
+                        svg.style.transition =
+                            "clip-path .15s cubic-bezier(.2,.7,.2,1)";
+                        svg.style.clipPath = "inset(-90% -8% -90% -8%)";
+                    });
+                }
+                return svg;
+            }
+
+            /* ---------------- card rendering ---------------- */
+            function renderCard(c) {
+                const card = document.createElement("div");
+                card.className = "card";
+                card.style.left = c.x + "px";
+                card.style.top = c.y + "px";
+                card.style.setProperty("--h", (c.h || 360) + "px");
+
+                const strip = document.createElement("div");
+                strip.className = "strip";
+
+                const img = document.createElement("img");
+                img.className = "paper";
+                img.src = c.img;
+                img.alt = "";
+
+                // counter: live slash count "/" editable target N (only N is editable)
+                const num = document.createElement("div");
+                num.className = "num";
+                const countEl = document.createElement("span");
+                countEl.className = "count";
+                countEl.textContent = c.slashes ? c.slashes.length : 0;
+                const sep = document.createElement("span");
+                sep.className = "sep";
+                sep.textContent = "/";
+                const targetEl = document.createElement("span");
+                targetEl.className = "target";
+                targetEl.contentEditable = "plaintext-only";
+                if (c.target == null)
+                    c.target =
+                        c.number != null && c.number !== ""
+                            ? parseInt(c.number, 10) || ""
+                            : "";
+                targetEl.textContent = c.target === 0 ? "0" : c.target || "";
+                targetEl.addEventListener("input", () => {
+                    const v = targetEl.textContent
+                        .replace(/[^0-9]/g, "")
+                        .slice(0, 3);
+                    c.target = v === "" ? "" : parseInt(v, 10);
+                    save();
+                });
+                // a single click anywhere on the counter starts editing N (the target)
+                num.addEventListener("mousedown", (e) => {
+                    e.stopPropagation();
+                    if (e.target !== targetEl) {
+                        e.preventDefault();
+                        targetEl.focus();
+                        const sel = getSelection(),
+                            rng = document.createRange();
+                        rng.selectNodeContents(targetEl);
+                        rng.collapse(false);
+                        sel.removeAllRanges();
+                        sel.addRange(rng);
+                    }
+                });
+                num.append(countEl, sep, targetEl);
+                card._countEl = countEl;
+
+                const slLayer = document.createElement("div");
+                slLayer.className = "slashes";
+
+                strip.append(img, num, slLayer);
+
+                const label = document.createElement("div");
+                label.className = "label";
+                label.contentEditable = "plaintext-only";
+                label.textContent = c.text || "";
+                label.addEventListener("input", () => {
+                    c.text = label.textContent;
+                    save();
+                });
+                label.addEventListener("mousedown", (e) => e.stopPropagation());
+
+                const ctrls = document.createElement("div");
+                ctrls.className = "ctrls";
+                const swapB = document.createElement("button");
+                swapB.textContent = "↻";
+                swapB.title = "swap art";
+                const delB = document.createElement("button");
+                delB.textContent = "✕";
+                delB.title = "delete";
+                ctrls.append(swapB, delB);
+                swapB.addEventListener("mousedown", (e) => e.stopPropagation());
+                delB.addEventListener("mousedown", (e) => e.stopPropagation());
+                swapB.addEventListener("click", () => {
+                    let n;
+                    do {
+                        n = pick(TALISMAINS);
+                    } while (n === c.img && TALISMAINS.length > 1);
+                    c.img = n;
+                    img.src = n;
+                    save();
+                });
+                delB.addEventListener("click", () => {
+                    card.remove();
+                    state.cards = state.cards.filter((x) => x !== c);
+                    save();
+                });
+
+                // controls live inside the strip so they stay centred over the talismain
+                // (not the card+label), keeping them clear of the label's ✎ on thin strips
+                strip.appendChild(ctrls);
+                card.append(strip, label);
+                card._data = c;
+                card._strip = strip;
+                card._slLayer = slLayer;
+
+                // restore existing slashes (migrate older stroke-based saves to the tapered shape)
+                (c.slashes || []).forEach((sd, idx) => {
+                    if (sd && !sd.thick) {
+                        const len = sd.w
+                            ? Math.max(60, (sd.w - 16) / 1.45)
+                            : 120;
+                        const g = makeSlash(len);
+                        sd = Object.assign({}, sd, {
+                            thick: g.thick,
+                            hair: g.hair,
+                            w: g.w,
+                            h: g.h,
+                        });
+                        delete sd.d;
+                        delete sd.cd;
+                        if (sd.left == null)
+                            sd.left = (strip.clientWidth || 60) / 2;
+                        if (sd.top == null) sd.top = (c.h || 360) * 0.5;
+                        if (sd.rot == null) sd.rot = rnd(-20, 20);
+                        if (sd.seed == null)
+                            sd.seed = Math.floor(rnd(1, 999999));
+                        c.slashes[idx] = sd;
+                    }
+                    slLayer.appendChild(buildSlash(sd, false));
+                });
+
+                wireInteractions(card, c, strip, slLayer);
+                stage.appendChild(card); // DOM order = stacking order (cards carry no z-index)
+                return card;
+            }
+
+            // Bring a card to the front by moving it to the end of the stage's DOM.
+            // Cards have no z-index, so later-in-DOM = painted on top. c.z is kept only
+            // so the stack order can be restored on reload.
+            function bringFront(card) {
+                const c = card._data;
+                c.z = ++zTop;
+                if (stage.lastElementChild !== card) stage.appendChild(card);
+                save();
+            }
+
+            /* ---------------- interactions: drag / slash / resize ---------------- */
+            function wireInteractions(card, c, strip, slLayer) {
+                let down = null,
+                    dragging = false;
+
+                strip.addEventListener("mousedown", (e) => {
+                    if (e.button !== 0) return;
+                    down = { x: e.clientX, y: e.clientY, ox: c.x, oy: c.y };
+                    dragging = false;
+                    bringFront(card);
+                    strip.classList.add("grabbing");
+                    e.preventDefault();
+                });
+
+                window.addEventListener("mousemove", (e) => {
+                    if (!down) return;
+                    const dx = e.clientX - down.x,
+                        dy = e.clientY - down.y;
+                    if (!dragging && Math.hypot(dx, dy) > 4) dragging = true;
+                    if (dragging) {
+                        c.x = down.ox + dx;
+                        c.y = down.oy + dy;
+                        card.style.left = c.x + "px";
+                        card.style.top = c.y + "px";
+                    }
+                });
+
+                window.addEventListener("mouseup", (e) => {
+                    if (!down) return;
+                    strip.classList.remove("grabbing");
+                    const wasDrag = dragging;
+                    down = null;
+                    if (wasDrag) {
+                        save();
+                        return;
+                    }
+                    // it was a click -> carve a slash at the cursor position
+                    if (e.button === 0) addSlash(c, card, e);
+                });
+
+                // right-click removes the most recent slash
+                strip.addEventListener("contextmenu", (e) => {
+                    e.preventDefault();
+                    removeSlash(c, card);
+                });
+
+                // ctrl/cmd + wheel resizes
+                card.addEventListener(
+                    "wheel",
+                    (e) => {
+                        if (!(e.ctrlKey || e.metaKey)) return;
+                        e.preventDefault();
+                        c.h = Math.max(
+                            160,
+                            Math.min(760, (c.h || 360) - e.deltaY * 0.4),
+                        );
+                        card.style.setProperty("--h", c.h + "px");
+                        save();
+                    },
+                    { passive: false },
+                );
+            }
+
+            function addSlash(c, card, e) {
+                const strip = card._strip,
+                    slLayer = card._slLayer;
+                const r = strip.getBoundingClientRect();
+                // horizontal cut that spans the strip and overhangs its edges
+                const len = Math.max(
+                    70,
+                    Math.min(230, r.width * rnd(1.5, 2.3)),
+                );
+                const g = makeSlash(len);
+                const data = {
+                    thick: g.thick,
+                    hair: g.hair,
+                    w: g.w,
+                    h: g.h,
+                    left: e.clientX - r.left,
+                    top: e.clientY - r.top,
+                    rot: rnd(-20, 20),
+                    seed: Math.floor(rnd(1, 999999)),
+                };
+                c.slashes = c.slashes || [];
+                c.slashes.push(data);
+                slLayer.appendChild(buildSlash(data, true));
+                if (card._countEl) card._countEl.textContent = c.slashes.length;
+                strip.classList.remove("cut");
+                void strip.offsetWidth;
+                strip.classList.add("cut");
+                save();
+            }
+
+            function removeSlash(c, card) {
+                const slLayer = card._slLayer;
+                // ignore slashes already animating out, so every one can be removed
+                const live = Array.from(slLayer.children).filter(
+                    (s) => !s.classList.contains("dying"),
+                );
+                if (!live.length) return;
+                c.slashes.pop();
+                const last = live[live.length - 1];
+                last.classList.add("dying");
+                setTimeout(() => last.remove(), 200);
+                if (card._countEl) card._countEl.textContent = c.slashes.length;
+                save();
+            }
+
+            /* ---------------- toolbar actions ---------------- */
+            function addTalismain(img, x, y) {
+                const c = {
+                    id: nextId++,
+                    img: img || pick(TALISMAINS),
+                    x: x != null ? x : 90 + (addOffset % 6) * 46,
+                    y: y != null ? y : 90 + (addOffset % 6) * 30,
+                    target: "",
+                    text: "",
+                    slashes: [],
+                    h: 360,
+                    z: ++zTop,
+                };
+                addOffset++;
+                state.cards.push(c);
+                renderCard(c);
+                save();
+            }
+
+            function setBackground(src) {
+                state.bg = src;
+                const bg = document.getElementById("bg");
+                bg.style.backgroundImage = src ? `url("${src}")` : "none";
+                document.querySelectorAll("#bgRow .thumb").forEach((t) => {
+                    t.classList.toggle("sel", t.dataset.src === src);
+                });
+                setBgFit(state.bgFit || "cover");
+                save();
+            }
+
+            // how the chosen background is sized/anchored. Pin modes fill the pinned
+            // side's dimension and anchor the image flush to that edge (the rest is black).
+            const BG_FITS = {
+                cover: { size: "cover", pos: "center center" },
+                contain: { size: "contain", pos: "center center" },
+                top: { size: "100% auto", pos: "center top" },
+                bottom: { size: "100% auto", pos: "center bottom" },
+                left: { size: "auto 100%", pos: "left center" },
+                right: { size: "auto 100%", pos: "right center" },
+            };
+            function setBgFit(mode) {
+                if (!BG_FITS[mode]) mode = "cover";
+                state.bgFit = mode;
+                const bg = document.getElementById("bg");
+                bg.style.backgroundSize = BG_FITS[mode].size;
+                bg.style.backgroundPosition = BG_FITS[mode].pos;
+                document.querySelectorAll("#bgFitRow button").forEach((b) => {
+                    b.classList.toggle("sel", b.dataset.fit === mode);
+                });
+                save();
+            }
+            function setBgDim(v) {
+                state.bgDim = v;
+                document.getElementById("bgdim").style.background =
+                    `radial-gradient(ellipse at center, rgba(0,0,0,${((v / 100) * 0.7).toFixed(2)}) 0%, rgba(0,0,0,${(0.45 + (v / 100) * 0.5).toFixed(2)}) 100%)`;
+                save();
+            }
+            function shuffleDetail() {
+                state.detail = pick(DETAILS);
+                document.getElementById("detail").src = state.detail;
+                save();
+            }
+
+            /* ---------------- build bg menu ---------------- */
+            function buildBgMenu() {
+                const row = document.getElementById("bgRow");
+                row.innerHTML = "";
+                const none = document.createElement("div");
+                none.className = "none";
+                none.textContent = "none";
+                none.addEventListener("click", () => setBackground(null));
+                row.appendChild(none);
+                BACKGROUNDS.forEach((src) => {
+                    const t = document.createElement("img");
+                    t.className = "thumb";
+                    t.src = src;
+                    t.dataset.src = src;
+                    t.alt = "";
+                    t.addEventListener("click", () => setBackground(src));
+                    row.appendChild(t);
+                });
+            }
+
+            document
+                .getElementById("addBtn")
+                .addEventListener("click", () => addTalismain());
+            document
+                .getElementById("shuffleBtn")
+                .addEventListener("click", shuffleDetail);
+            document
+                .getElementById("detail")
+                .addEventListener("click", shuffleDetail);
+            document
+                .getElementById("clearBtn")
+                .addEventListener("click", () => {
+                    if (!confirm("Remove all talismains?")) return;
+                    state.cards = [];
+                    stage.innerHTML = "";
+                    save();
+                });
+            const bar = document.getElementById("bar");
+            const bgBtn = document.getElementById("bgBtn"),
+                bgMenu = document.getElementById("bgmenu");
+            // keep the (faded) toolbar fully visible whenever the menu is left open
+            function syncMenuOpen() {
+                bar.classList.toggle(
+                    "menuopen",
+                    bgMenu.classList.contains("open"),
+                );
+            }
+            bgBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                bgMenu.classList.toggle("open");
+                syncMenuOpen();
+            });
+            document.addEventListener("click", (e) => {
+                if (!bgMenu.contains(e.target) && e.target !== bgBtn) {
+                    bgMenu.classList.remove("open");
+                    syncMenuOpen();
+                }
+            });
+            document
+                .getElementById("bgDim")
+                .addEventListener("input", (e) => setBgDim(+e.target.value));
+            document
+                .getElementById("bgFitRow")
+                .addEventListener("click", (e) => {
+                    const b = e.target.closest("button");
+                    if (!b) return;
+                    setBgFit(b.dataset.fit);
+                });
+
+            /* ---------------- boot ---------------- */
+            function init() {
+                const saved = load();
+                if (saved) {
+                    state = Object.assign(
+                        {
+                            cards: [],
+                            bg: null,
+                            bgDim: 55,
+                            bgFit: "cover",
+                            detail: null,
+                        },
+                        saved,
+                    );
+                    state.cards.forEach((c) => {
+                        c.id = c.id || nextId++;
+                        if (c.id >= nextId) nextId = c.id + 1;
+                        if (c.z && c.z > zTop) zTop = c.z;
+                    });
+                    // render in saved stack order so DOM order == front-to-back order
+                    state.cards
+                        .slice()
+                        .sort((a, b) => (a.z || 0) - (b.z || 0))
+                        .forEach(renderCard);
+                    setBgFit(state.bgFit || "cover");
+                    if (state.bg) setBackground(state.bg);
+                    document.getElementById("bgDim").value = state.bgDim;
+                    setBgDim(state.bgDim);
+                    document.getElementById("detail").src =
+                        state.detail || (state.detail = pick(DETAILS));
+                } else {
+                    setBgDim(55);
+                    setBgFit("cover");
+                    shuffleDetail();
+                    // start with one talismain so the board isn't empty
+                    addTalismain(TALISMAINS[1] || TALISMAINS[0], 140, 110);
+                }
+            }
+
+            /* Read the folders first (no-op on file://), then build + boot. */
+            (async function boot() {
+                await loadFolders();
+                buildBgMenu();
+                init();
+            })();
+        </script>
+    </body>
+</html>

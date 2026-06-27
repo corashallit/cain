@@ -1,0 +1,12 @@
+# This repo intentionally tracks ONLY the code files.
+# The CAIN rulebook PDFs/plaintext, the generated notes, and the reference
+# image assets are deliberately left untracked (large, mostly third-party
+# material). Whitelist approach: ignore everything, then re-include code.
+
+# Ignore everything at the root by default...
+/*
+
+# ...but keep the code files and this ignore list.
+!.gitignore
+!talismains.html
+!open-talismains.command
