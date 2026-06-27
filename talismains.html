@@ -364,7 +364,10 @@
                 position: relative;
                 z-index: 1;
                 align-self: flex-start;
-                margin-top: 11%;
+                /* offset relative to the strip HEIGHT (--h), not a % — a % margin
+                   resolves against the card's WIDTH, so the label crept downward
+                   as the box widened while typing. */
+                margin-top: calc(var(--h, 360px) * 0.11);
                 width: max-content;
                 max-width: 190px;
                 max-height: 62vh;
@@ -453,6 +456,271 @@
                 background: #2a0809;
             }
 
+            /* ---- resolved (filled) state: the ✕ becomes ✓, counter pulses amber ---- */
+            .ctrls button.resolved {
+                border-color: #b8860b;
+                color: #ffd56b;
+                background: rgba(40, 28, 4, 0.92);
+            }
+            .ctrls button.resolved:hover {
+                border-color: #ffcc4d;
+                color: #fff;
+                background: #3a2a06;
+            }
+            .card.filled .num {
+                animation: fullpulse 1.8s ease-in-out infinite;
+            }
+            @keyframes fullpulse {
+                0%,
+                100% {
+                    text-shadow:
+                        0 0 3px rgba(255, 255, 255, 0.95),
+                        0 0 2px rgba(255, 255, 255, 0.95);
+                }
+                50% {
+                    text-shadow:
+                        0 0 7px rgba(255, 205, 90, 0.95),
+                        0 0 14px rgba(255, 165, 40, 0.7),
+                        0 0 2px rgba(255, 255, 255, 0.95);
+                }
+            }
+
+            /* ---- dramatic deletion: rip (unfilled) / burn (filled) ---- */
+            .card.leaving .label {
+                transition: opacity 0.35s ease;
+                opacity: 0;
+                pointer-events: none;
+            }
+            .rip,
+            .burnwrap {
+                position: absolute;
+                left: 0;
+                top: 0;
+                pointer-events: none;
+                z-index: 8;
+            }
+
+            /* ====== rip: violent tear into ribbons + flying parchment shards ====== */
+            .ribbon {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                transform-origin: 50% 0%;
+                will-change: transform, opacity;
+                animation: ripfall var(--dur, 1.3s)
+                    cubic-bezier(0.36, 0.06, 0.32, 1) forwards;
+            }
+            .ribbon > .strip {
+                cursor: default;
+            }
+            /* crack apart (16%), hang together a beat, then tumble down and fade */
+            @keyframes ripfall {
+                0% {
+                    transform: translate(0, 0) rotate(0deg);
+                    opacity: 1;
+                }
+                16% {
+                    transform: translate(var(--spread, 0), -12px)
+                        rotate(calc(var(--rot) * 0.12));
+                    opacity: 1;
+                }
+                66% {
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(var(--dx), var(--dy)) rotate(var(--rot));
+                    opacity: 0;
+                }
+            }
+            /* light parchment shards that explode outward (visible on black) */
+            .shard {
+                position: absolute;
+                z-index: 9;
+                will-change: transform, opacity;
+                background: linear-gradient(
+                    135deg,
+                    #efe4c8 0%,
+                    #cbb585 55%,
+                    #9a8254 100%
+                );
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+                animation: shardfly var(--sd, 0.85s)
+                    cubic-bezier(0.16, 0.7, 0.3, 1) forwards;
+            }
+            @keyframes shardfly {
+                0% {
+                    opacity: 1;
+                    transform: translate(0, 0) rotate(0deg) scale(1);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translate(var(--sx), var(--sy)) rotate(var(--sr))
+                        scale(0.35);
+                }
+            }
+            .tearflash {
+                position: absolute;
+                inset: -12%;
+                z-index: 10;
+                pointer-events: none;
+                mix-blend-mode: screen;
+                background: radial-gradient(
+                    circle at 50% 45%,
+                    rgba(255, 240, 210, 0.9) 0%,
+                    rgba(255, 255, 255, 0) 65%
+                );
+                animation: tearflash 0.36s ease-out forwards;
+            }
+            @keyframes tearflash {
+                0% {
+                    opacity: 0;
+                    transform: scale(0.5);
+                }
+                22% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0;
+                    transform: scale(1.5);
+                }
+            }
+
+            /* ====== burn: bottom-up dissolve, driven frame-by-frame from JS ====== */
+            /* the mask reads an inline --burn that the rAF loop updates every frame;
+               filter (live heat warp) and transform (violent flutter) are set inline */
+            .burnwrap > .strip {
+                --burn: -16%;
+                transform-origin: 50% 12%;
+                will-change: transform, filter;
+                -webkit-mask-image: linear-gradient(
+                    to top,
+                    transparent var(--burn),
+                    #000 calc(var(--burn) + 8%)
+                );
+                mask-image: linear-gradient(
+                    to top,
+                    transparent var(--burn),
+                    #000 calc(var(--burn) + 8%)
+                );
+            }
+            /* the burning front: a thick, flickering band of fire */
+            .flame {
+                position: absolute;
+                left: -14%;
+                width: 128%;
+                height: 34px;
+                transform: translateY(-50%);
+                background: radial-gradient(
+                    ellipse 60% 135% at 50% 45%,
+                    #fff7cc 0%,
+                    #ffd24a 20%,
+                    #ff8a1e 44%,
+                    #ff3a0a 62%,
+                    rgba(150, 20, 0, 0) 82%
+                );
+                box-shadow: 0 -5px 12px 2px rgba(20, 5, 0, 0.9);
+                filter: blur(2px) brightness(1.4);
+                mix-blend-mode: screen;
+                z-index: 3;
+                opacity: 0;
+                pointer-events: none;
+            }
+            /* white-hot fast sparks */
+            .spark {
+                position: absolute;
+                border-radius: 50%;
+                background: radial-gradient(
+                    circle,
+                    #fffbe8 0%,
+                    #ffd27a 45%,
+                    rgba(255, 140, 30, 0) 75%
+                );
+                box-shadow: 0 0 6px 1px rgba(255, 200, 90, 0.9);
+                mix-blend-mode: screen;
+                opacity: 0;
+                z-index: 5;
+                will-change: transform, opacity;
+                animation: sparkfly var(--ad, 0.6s) ease-out var(--adl, 0s) forwards;
+            }
+            @keyframes sparkfly {
+                0% {
+                    opacity: 0;
+                    transform: translate(0, 0) scale(1);
+                }
+                12% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0;
+                    transform: translate(var(--ax, 0), var(--ay, -160px)) scale(0.2);
+                }
+            }
+            /* slower orange embers that flutter up */
+            .ember {
+                position: absolute;
+                border-radius: 50%;
+                background: radial-gradient(
+                    circle,
+                    #ffe6a0 0%,
+                    #ff8a2a 50%,
+                    rgba(255, 80, 0, 0) 78%
+                );
+                box-shadow: 0 0 5px 1px rgba(255, 140, 40, 0.7);
+                mix-blend-mode: screen;
+                opacity: 0;
+                z-index: 4;
+                will-change: transform, opacity;
+                animation: emberfly var(--ad, 1s) ease-out var(--adl, 0s) forwards;
+            }
+            @keyframes emberfly {
+                0% {
+                    opacity: 0;
+                    transform: translate(0, 0) scale(1) rotate(0deg);
+                }
+                15% {
+                    opacity: 0.95;
+                }
+                100% {
+                    opacity: 0;
+                    transform: translate(var(--ax, 0), var(--ay, -120px)) scale(0.3)
+                        rotate(140deg);
+                }
+            }
+            /* drifting smoke */
+            .smoke {
+                position: absolute;
+                border-radius: 50%;
+                background: radial-gradient(
+                    circle,
+                    rgba(120, 110, 100, 0.5) 0%,
+                    rgba(60, 55, 50, 0) 70%
+                );
+                opacity: 0;
+                z-index: 2;
+                will-change: transform, opacity;
+                animation: smokerise var(--ad, 1.2s) ease-out var(--adl, 0s) forwards;
+            }
+            @keyframes smokerise {
+                0% {
+                    opacity: 0;
+                    transform: translate(0, 0) scale(0.5);
+                }
+                25% {
+                    opacity: 0.5;
+                }
+                100% {
+                    opacity: 0;
+                    transform: translate(var(--ax, 0), var(--ay, -100px)) scale(2.2);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .card.filled .num {
+                    animation: none;
+                }
+            }
+
             #help {
                 position: relative;
             }
@@ -536,7 +804,9 @@
                     counter tracks <b>slashes / N</b>; <b>click the N</b> to set
                     the target · <b>Click beside it</b> to add text ·
                     <b>Ctrl/⌘ + scroll</b> over one to resize · Hover a strip
-                    for <b>swap art / delete</b>.
+                    for <b>swap art / delete</b> · once slashes reach
+                    <b>N</b> the ✕ becomes a <b>✓</b> — deleting a full talismain
+                    <b>burns</b> it away, an unfilled one <b>tears apart</b>.
                 </div>
             </div>
         </div>
@@ -919,6 +1189,7 @@
                         .replace(/[^0-9]/g, "")
                         .slice(0, 3);
                     c.target = v === "" ? "" : parseInt(v, 10);
+                    updateResolveState(card);
                     save();
                 });
                 // a single click anywhere on the counter starts editing N (the target)
@@ -961,6 +1232,7 @@
                 const delB = document.createElement("button");
                 delB.textContent = "✕";
                 delB.title = "delete";
+                card._delB = delB;
                 ctrls.append(swapB, delB);
                 swapB.addEventListener("mousedown", (e) => e.stopPropagation());
                 delB.addEventListener("mousedown", (e) => e.stopPropagation());
@@ -974,9 +1246,7 @@
                     save();
                 });
                 delB.addEventListener("click", () => {
-                    card.remove();
-                    state.cards = state.cards.filter((x) => x !== c);
-                    save();
+                    dissolveCard(card, c, strip);
                 });
 
                 // controls live inside the strip so they stay centred over the talismain
@@ -1013,6 +1283,7 @@
                     slLayer.appendChild(buildSlash(sd, false));
                 });
 
+                updateResolveState(card);
                 wireInteractions(card, c, strip, slLayer);
                 stage.appendChild(card); // DOM order = stacking order (cards carry no z-index)
                 return card;
@@ -1115,6 +1386,7 @@
                 c.slashes.push(data);
                 slLayer.appendChild(buildSlash(data, true));
                 if (card._countEl) card._countEl.textContent = c.slashes.length;
+                updateResolveState(card);
                 strip.classList.remove("cut");
                 void strip.offsetWidth;
                 strip.classList.add("cut");
@@ -1133,7 +1405,272 @@
                 last.classList.add("dying");
                 setTimeout(() => last.remove(), 200);
                 if (card._countEl) card._countEl.textContent = c.slashes.length;
+                updateResolveState(card);
                 save();
+            }
+
+            /* ---------- resolve state + dramatic deletion ----------
+               A talismain is "full" once its slash count reaches its target N.
+               Full talismains show a ✓ (resolved) instead of ✕, and delete with a
+               burn-away; unfilled ones tear into ribbons. */
+            function isFilled(c) {
+                const t = parseInt(c.target, 10);
+                const n = c.slashes ? c.slashes.length : 0;
+                return Number.isFinite(t) && t > 0 && n >= t;
+            }
+            function updateResolveState(card) {
+                const c = card._data,
+                    delB = card._delB;
+                if (!delB) return;
+                const filled = isFilled(c);
+                delB.textContent = filled ? "✓" : "✕";
+                delB.title = filled ? "resolve (full)" : "delete";
+                delB.classList.toggle("resolved", filled);
+                card.classList.toggle("filled", filled);
+            }
+
+            const prefersReduced = () =>
+                window.matchMedia &&
+                matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            // a clone of the strip's visuals (art + counter + slashes), minus controls
+            function cloneStripVisual(strip) {
+                const clone = strip.cloneNode(true);
+                clone.classList.remove("cut", "grabbing");
+                const cc = clone.querySelector(".ctrls");
+                if (cc) cc.remove();
+                return clone;
+            }
+
+            function dissolveCard(card, c, strip) {
+                if (card._leaving) return;
+                card._leaving = true;
+                // detach from state now so a reload mid-animation won't resurrect it;
+                // the DOM node lingers only until its animation ends
+                state.cards = state.cards.filter((x) => x !== c);
+                save();
+                card.classList.add("leaving");
+                card.style.pointerEvents = "none";
+                const W = strip.offsetWidth || 60,
+                    H = strip.offsetHeight || 360;
+                const finish = () => card.remove();
+                if (prefersReduced()) {
+                    card.style.transition = "opacity .25s ease";
+                    card.style.opacity = "0";
+                    setTimeout(finish, 280);
+                    return;
+                }
+                if (isFilled(c)) burnAway(card, strip, W, H, finish);
+                else ripApart(card, strip, W, H, finish);
+            }
+
+            // violently tear the strip into ragged ribbons + a burst of parchment shards
+            function ripApart(card, strip, W, H, done) {
+                const N = 6,
+                    ROWS = 9;
+                // shared ragged seam x-positions (%), so neighbouring ribbons interlock
+                const seams = [];
+                for (let j = 0; j <= N; j++) {
+                    const base = (j / N) * 100,
+                        col = [];
+                    for (let r = 0; r < ROWS; r++)
+                        col.push(j === 0 || j === N ? base : base + rnd(-6, 6));
+                    seams.push(col);
+                }
+                const wrap = document.createElement("div");
+                wrap.className = "rip";
+                wrap.style.width = W + "px";
+                wrap.style.height = H + "px";
+                strip.style.visibility = "hidden";
+
+                // bright flash at the moment of the tear
+                const flash = document.createElement("div");
+                flash.className = "tearflash";
+                wrap.appendChild(flash);
+
+                for (let i = 0; i < N; i++) {
+                    const rib = document.createElement("div");
+                    rib.className = "ribbon";
+                    rib.appendChild(cloneStripVisual(strip));
+                    const pts = [];
+                    const yAt = (r) => ((r / (ROWS - 1)) * 100).toFixed(2);
+                    for (let r = 0; r < ROWS; r++)
+                        pts.push(`${seams[i][r].toFixed(2)}% ${yAt(r)}%`);
+                    for (let r = ROWS - 1; r >= 0; r--)
+                        pts.push(`${seams[i + 1][r].toFixed(2)}% ${yAt(r)}%`);
+                    rib.style.clipPath = `polygon(${pts.join(",")})`;
+                    const centre = (i + 0.5) / N - 0.5; // -0.5 .. 0.5
+                    // fan the strips apart first (so you SEE it tear), then they fall
+                    rib.style.setProperty(
+                        "--spread",
+                        (centre * rnd(55, 85)).toFixed(0) + "px",
+                    );
+                    rib.style.setProperty(
+                        "--dx",
+                        (centre * 190 + rnd(-30, 30)).toFixed(0) + "px",
+                    );
+                    rib.style.setProperty("--dy", rnd(300, 520).toFixed(0) + "px");
+                    rib.style.setProperty(
+                        "--rot",
+                        (centre * 90 + rnd(-30, 30)).toFixed(0) + "deg",
+                    );
+                    rib.style.setProperty("--dur", rnd(1.15, 1.5).toFixed(2) + "s");
+                    rib.style.animationDelay = (i * 0.02).toFixed(3) + "s";
+                    wrap.appendChild(rib);
+                }
+
+                // exploding parchment shards — light-coloured so the tear reads on black
+                for (let i = 0; i < 30; i++) {
+                    const sh = document.createElement("div");
+                    sh.className = "shard";
+                    sh.style.width = rnd(6, 20).toFixed(0) + "px";
+                    sh.style.height = rnd(6, 22).toFixed(0) + "px";
+                    sh.style.left = rnd(-6, 94).toFixed(0) + "%";
+                    sh.style.top = rnd(0, 94).toFixed(0) + "%";
+                    sh.style.clipPath = `polygon(${rnd(0, 30).toFixed(0)}% 0%, 100% ${rnd(0, 40).toFixed(0)}%, ${rnd(55, 100).toFixed(0)}% 100%, 0% ${rnd(50, 100).toFixed(0)}%)`;
+                    sh.style.setProperty("--sx", rnd(-230, 230).toFixed(0) + "px");
+                    sh.style.setProperty("--sy", rnd(-150, 300).toFixed(0) + "px");
+                    sh.style.setProperty("--sr", rnd(-640, 640).toFixed(0) + "deg");
+                    sh.style.setProperty("--sd", rnd(0.8, 1.3).toFixed(2) + "s");
+                    sh.style.animationDelay = rnd(0, 0.1).toFixed(3) + "s";
+                    wrap.appendChild(sh);
+                }
+                card.appendChild(wrap);
+                setTimeout(done, 1650);
+            }
+
+            // burn the strip away bottom-up — driven frame-by-frame so the whole
+            // talismain writhes, the heat-warp crawls and grows, and it sheds sparks,
+            // embers and smoke. Fast and violent.
+            let burnSeq = 0;
+            function burnAway(card, strip, W, H, done) {
+                const NS = "http://www.w3.org/2000/svg";
+                const fid = "burn" + ++burnSeq;
+                // a per-burn filter we can drive live (the shared one was static)
+                const fsvg = document.createElementNS(NS, "svg");
+                fsvg.setAttribute("width", "0");
+                fsvg.setAttribute("height", "0");
+                fsvg.style.cssText = "position:absolute;width:0;height:0;";
+                fsvg.innerHTML = `<defs><filter id="${fid}" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="${Math.floor(rnd(1, 9999))}" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter></defs>`;
+                document.body.appendChild(fsvg);
+                const turb = fsvg.querySelector("feTurbulence");
+                const disp = fsvg.querySelector("feDisplacementMap");
+
+                const wrap = document.createElement("div");
+                wrap.className = "burnwrap";
+                wrap.style.width = W + "px";
+                wrap.style.height = H + "px";
+                const paper = cloneStripVisual(strip);
+                paper.style.filter = `url(#${fid})`;
+                wrap.appendChild(paper);
+
+                const flame = document.createElement("div");
+                flame.className = "flame";
+                wrap.appendChild(flame);
+
+                const DUR = 720; // ms — ~1.7x faster than before
+                // particle factory: each emits from near the rising burn front
+                const spawn = (cls, n, opt) => {
+                    for (let i = 0; i < n; i++) {
+                        const el = document.createElement("div");
+                        el.className = cls;
+                        const delay = rnd(0, opt.maxDelay);
+                        const sz = rnd(opt.min, opt.max);
+                        el.style.width = el.style.height = sz.toFixed(1) + "px";
+                        el.style.left = rnd(0, 100).toFixed(1) + "%";
+                        el.style.bottom =
+                            ((delay / (DUR / 1000)) * 100 + rnd(-4, 8)).toFixed(1) +
+                            "%";
+                        el.style.setProperty(
+                            "--ax",
+                            rnd(-opt.spread, opt.spread).toFixed(0) + "px",
+                        );
+                        el.style.setProperty(
+                            "--ay",
+                            rnd(opt.riseMin, opt.riseMax).toFixed(0) + "px",
+                        );
+                        el.style.setProperty(
+                            "--ad",
+                            rnd(opt.durMin, opt.durMax).toFixed(2) + "s",
+                        );
+                        el.style.setProperty("--adl", delay.toFixed(2) + "s");
+                        wrap.appendChild(el);
+                    }
+                };
+                spawn("spark", 30, {
+                    min: 2,
+                    max: 4,
+                    maxDelay: 0.55,
+                    spread: 80,
+                    riseMin: -210,
+                    riseMax: -110,
+                    durMin: 0.45,
+                    durMax: 0.8,
+                });
+                spawn("ember", 24, {
+                    min: 3,
+                    max: 7,
+                    maxDelay: 0.6,
+                    spread: 45,
+                    riseMin: -160,
+                    riseMax: -80,
+                    durMin: 0.7,
+                    durMax: 1.2,
+                });
+                spawn("smoke", 9, {
+                    min: 20,
+                    max: 42,
+                    maxDelay: 0.6,
+                    spread: 34,
+                    riseMin: -130,
+                    riseMax: -70,
+                    durMin: 0.9,
+                    durMax: 1.4,
+                });
+
+                strip.style.visibility = "hidden";
+                card.appendChild(wrap);
+
+                let start = null;
+                const ph1 = rnd(0, 6.28),
+                    ph2 = rnd(0, 6.28);
+                function frame(now) {
+                    if (start == null) start = now;
+                    const p = Math.min(1, (now - start) / DUR);
+                    const t = (now - start) / 1000;
+                    // bottom-up consumption
+                    paper.style.setProperty("--burn", (-16 + p * 140).toFixed(1) + "%");
+                    // heat-warp that crawls and intensifies as it burns
+                    disp.setAttribute("scale", (5 + p * p * 50).toFixed(1));
+                    turb.setAttribute(
+                        "baseFrequency",
+                        (0.012 + p * 0.022).toFixed(3) +
+                            " " +
+                            (0.02 + p * 0.075).toFixed(3),
+                    );
+                    // violent flutter/curl of the shrinking remnant
+                    const flx = Math.sin(t * 33 + ph1) * 8 * p + Math.sin(t * 12) * 5;
+                    const rot = Math.sin(t * 25 + ph2) * 10 * p + p * 9;
+                    const skew = Math.sin(t * 29 + 1) * 10 * p;
+                    const lift = -p * 78;
+                    const sc = 1 - p * 0.2;
+                    paper.style.transform = `translate(${flx.toFixed(1)}px, ${lift.toFixed(1)}px) rotate(${rot.toFixed(1)}deg) skewX(${skew.toFixed(1)}deg) scale(${sc.toFixed(3)})`;
+                    paper.style.opacity =
+                        p > 0.82 ? (1 - (p - 0.82) / 0.18).toFixed(2) : "1";
+                    // the fire front rides up, flickering
+                    flame.style.top = (110 - p * 124).toFixed(1) + "%";
+                    flame.style.opacity = (
+                        p < 0.06 ? p / 0.06 : p > 0.92 ? (1 - p) / 0.08 : 1
+                    ).toFixed(2);
+                    flame.style.transform = `translateY(-50%) scaleY(${(1 + Math.sin(t * 42) * 0.3).toFixed(2)})`;
+                    if (p < 1) requestAnimationFrame(frame);
+                    else fsvg.remove();
+                }
+                requestAnimationFrame(frame);
+                setTimeout(done, 1100);
             }
 
             /* ---------------- toolbar actions ---------------- */
