@@ -509,7 +509,7 @@
                 height: 100%;
                 transform-origin: 50% 0%;
                 will-change: transform, opacity;
-                animation: ripfall var(--dur, 1.3s)
+                animation: ripfall var(--dur, 1s)
                     cubic-bezier(0.36, 0.06, 0.32, 1) forwards;
             }
             .ribbon > .strip {
@@ -571,7 +571,7 @@
                     rgba(255, 240, 210, 0.9) 0%,
                     rgba(255, 255, 255, 0) 65%
                 );
-                animation: tearflash 0.36s ease-out forwards;
+                animation: tearflash 0.28s ease-out forwards;
             }
             @keyframes tearflash {
                 0% {
@@ -1514,8 +1514,8 @@
                         "--rot",
                         (centre * 90 + rnd(-30, 30)).toFixed(0) + "deg",
                     );
-                    rib.style.setProperty("--dur", rnd(1.15, 1.5).toFixed(2) + "s");
-                    rib.style.animationDelay = (i * 0.02).toFixed(3) + "s";
+                    rib.style.setProperty("--dur", rnd(0.88, 1.15).toFixed(2) + "s");
+                    rib.style.animationDelay = (i * 0.015).toFixed(3) + "s";
                     wrap.appendChild(rib);
                 }
 
@@ -1531,12 +1531,12 @@
                     sh.style.setProperty("--sx", rnd(-230, 230).toFixed(0) + "px");
                     sh.style.setProperty("--sy", rnd(-150, 300).toFixed(0) + "px");
                     sh.style.setProperty("--sr", rnd(-640, 640).toFixed(0) + "deg");
-                    sh.style.setProperty("--sd", rnd(0.8, 1.3).toFixed(2) + "s");
-                    sh.style.animationDelay = rnd(0, 0.1).toFixed(3) + "s";
+                    sh.style.setProperty("--sd", rnd(0.62, 1.0).toFixed(2) + "s");
+                    sh.style.animationDelay = rnd(0, 0.077).toFixed(3) + "s";
                     wrap.appendChild(sh);
                 }
                 card.appendChild(wrap);
-                setTimeout(done, 1650);
+                setTimeout(done, 1270);
             }
 
             // burn the strip away bottom-up — driven frame-by-frame so the whole
@@ -1571,7 +1571,7 @@
                 flame.className = "flame";
                 wrap.appendChild(flame);
 
-                const DUR = 720; // ms — ~1.7x faster than before
+                const DUR = 555; // ms — fast and violent
                 // particle factory: each emits from near the rising burn front
                 const spawn = (cls, n, opt) => {
                     for (let i = 0; i < n; i++) {
@@ -1603,32 +1603,32 @@
                 spawn("spark", 30, {
                     min: 2,
                     max: 4,
-                    maxDelay: 0.55,
+                    maxDelay: 0.42,
                     spread: 80,
                     riseMin: -210,
                     riseMax: -110,
-                    durMin: 0.45,
-                    durMax: 0.8,
+                    durMin: 0.35,
+                    durMax: 0.62,
                 });
                 spawn("ember", 24, {
                     min: 3,
                     max: 7,
-                    maxDelay: 0.6,
+                    maxDelay: 0.46,
                     spread: 45,
                     riseMin: -160,
                     riseMax: -80,
-                    durMin: 0.7,
-                    durMax: 1.2,
+                    durMin: 0.54,
+                    durMax: 0.92,
                 });
                 spawn("smoke", 9, {
                     min: 20,
                     max: 42,
-                    maxDelay: 0.6,
+                    maxDelay: 0.46,
                     spread: 34,
                     riseMin: -130,
                     riseMax: -70,
-                    durMin: 0.9,
-                    durMax: 1.4,
+                    durMin: 0.69,
+                    durMax: 1.08,
                 });
 
                 strip.style.visibility = "hidden";
@@ -1661,7 +1661,11 @@
                     paper.style.opacity =
                         p > 0.82 ? (1 - (p - 0.82) / 0.18).toFixed(2) : "1";
                     // the fire front rides up, flickering
-                    flame.style.top = (110 - p * 124).toFixed(1) + "%";
+                    // lock the flame onto the dissolving edge so the orange never
+                    // lags the blackening. The mask's burn band sits at
+                    // (var(--burn)..+8%) from the bottom, i.e. centre ~(112 - 140p)%
+                    // from the top; ride ~3% ahead of it so fire leads the consumption.
+                    flame.style.top = (109 - p * 140).toFixed(1) + "%";
                     flame.style.opacity = (
                         p < 0.06 ? p / 0.06 : p > 0.92 ? (1 - p) / 0.08 : 1
                     ).toFixed(2);
@@ -1670,7 +1674,7 @@
                     else fsvg.remove();
                 }
                 requestAnimationFrame(frame);
-                setTimeout(done, 1100);
+                setTimeout(done, 850);
             }
 
             /* ---------------- toolbar actions ---------------- */
