@@ -515,6 +515,9 @@
             }
 
             /* ====== rip: violent tear into ribbons + flying paper scraps ====== */
+            /* the ribbon falls (ripfall) and lends perspective to its slice; the
+     slice inside carries the jagged clip AND the spin, so the torn shape
+     itself turns in the air */
             .ribbon {
                 position: absolute;
                 left: 0;
@@ -522,12 +525,31 @@
                 width: 100%;
                 height: 100%;
                 transform-origin: 50% 0%;
+                perspective: 520px;
                 will-change: transform, opacity;
                 animation: ripfall var(--dur, 1s)
                     cubic-bezier(0.36, 0.06, 0.32, 1) forwards;
             }
-            .ribbon > .strip {
+            .rslice {
+                position: absolute;
+                inset: 0;
+                will-change: transform;
+                animation: ribbonspin var(--fsp, 0.7s) linear
+                    var(--fdl, 0.15s) infinite;
+            }
+            .rslice > .strip {
                 cursor: default;
+            }
+            /* each falling strip spins steadily about its own long axis — flat to
+     the camera, then edge-on, then flat — like a dropped paper streamer.
+     The start delay (--fdl) keeps the strip reading as whole at the crack. */
+            @keyframes ribbonspin {
+                from {
+                    transform: rotateY(0turn);
+                }
+                to {
+                    transform: rotateY(var(--fdir, 1turn));
+                }
             }
             /* crack apart (16%), hang together a beat, then tumble down and fade */
             @keyframes ripfall {
@@ -1579,14 +1601,33 @@
                 for (let i = 0; i < N; i++) {
                     const rib = document.createElement("div");
                     rib.className = "ribbon";
-                    rib.appendChild(cloneStripVisual(strip));
+                    // slice layer: jagged clip + long-axis spin (see CSS). It
+                    // spins about its OWN centerline, not the strip's middle.
+                    const slice = document.createElement("div");
+                    slice.className = "rslice";
+                    slice.appendChild(cloneStripVisual(strip));
                     const pts = [];
                     const yAt = (r) => ((r / (ROWS - 1)) * 100).toFixed(2);
                     for (let r = 0; r < ROWS; r++)
                         pts.push(`${seams[i][r].toFixed(2)}% ${yAt(r)}%`);
                     for (let r = ROWS - 1; r >= 0; r--)
                         pts.push(`${seams[i + 1][r].toFixed(2)}% ${yAt(r)}%`);
-                    rib.style.clipPath = `polygon(${pts.join(",")})`;
+                    slice.style.clipPath = `polygon(${pts.join(",")})`;
+                    slice.style.transformOrigin =
+                        (((i + 0.5) / N) * 100).toFixed(1) + "% 50%";
+                    slice.style.setProperty(
+                        "--fsp",
+                        rnd(0.55, 0.95).toFixed(2) + "s",
+                    );
+                    slice.style.setProperty(
+                        "--fdl",
+                        rnd(0.08, 0.24).toFixed(2) + "s",
+                    );
+                    slice.style.setProperty(
+                        "--fdir",
+                        Math.random() < 0.5 ? "1turn" : "-1turn",
+                    );
+                    rib.appendChild(slice);
                     const centre = (i + 0.5) / N - 0.5; // -0.5 .. 0.5
                     // fan the strips apart first (so you SEE it tear), then they fall
                     rib.style.setProperty(
