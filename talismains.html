@@ -514,7 +514,7 @@
                 z-index: 8;
             }
 
-            /* ====== rip: violent tear into ribbons + flying parchment shards ====== */
+            /* ====== rip: violent tear into ribbons + flying paper scraps ====== */
             .ribbon {
                 position: absolute;
                 left: 0;
@@ -548,16 +548,16 @@
                     opacity: 0;
                 }
             }
-            /* light parchment shards that explode outward (visible on black) */
+            /* small paper scraps that burst from the tear (match the strip's white) */
             .shard {
                 position: absolute;
                 z-index: 9;
                 will-change: transform, opacity;
                 background: linear-gradient(
                     135deg,
-                    #efe4c8 0%,
-                    #cbb585 55%,
-                    #9a8254 100%
+                    #f6f5f1 0%,
+                    #dbd8d0 55%,
+                    #b8b4a8 100%
                 );
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
                 animation: shardfly var(--sd, 0.85s)
@@ -619,12 +619,31 @@
                     #000 calc(var(--burn) + 8%)
                 );
             }
+            /* charred scorch riding just above the burn line — lives INSIDE the
+               masked paper clone so it inherits the mask and every transform */
+            .char {
+                position: absolute;
+                left: -4%;
+                width: 108%;
+                height: 26px;
+                background: linear-gradient(
+                    to top,
+                    rgba(15, 8, 5, 0.98) 0%,
+                    rgba(52, 26, 13, 0.75) 40%,
+                    rgba(90, 50, 25, 0.3) 70%,
+                    transparent 100%
+                );
+                mix-blend-mode: multiply;
+                filter: blur(1px);
+                z-index: 6;
+                pointer-events: none;
+            }
             /* the burning front: a thick, flickering band of fire */
             .flame {
                 position: absolute;
-                left: -14%;
-                width: 128%;
-                height: 34px;
+                left: -6%;
+                width: 112%;
+                height: 30px;
                 transform: translateY(-50%);
                 background: radial-gradient(
                     ellipse 60% 135% at 50% 45%,
@@ -977,13 +996,15 @@
             }
 
             /* ---------------- slash generation ----------------
-   Modeled directly on the book's slashes (reference/talismains/slashes.png):
-   each slash is a STEEP near-vertical cut leaning right — a solid, ragged
-   brush-stroke body (mostly opaque, blunt marker-like ends) with ONE long
-   hairline running through the same axis that thins out and breaks into
-   flecks past the tips. Dry-brush texture comes from reusable SVG filters.
-   Stored slash geometry carries v:2 — older saves are regenerated on load. */
-            const SLASH_V = 2;
+   Modeled on the book's slashes (reference/talismains/slashes.png — drawn
+   for a HORIZONTAL talisman, so rotate it 90° to see the intended look on
+   our vertical strips): each slash is a shallow "\" cut, right end dipping
+   ~12–28°, crossing the full strip width — a solid, ragged brush-stroke
+   body (mostly opaque, blunt marker-like ends) with ONE long hairline on
+   the same axis that thins out and breaks into flecks past the tips. All
+   cuts lean the same way and stack down the strip like tally marks.
+   Stored slash geometry carries a version — older saves regenerate on load. */
+            const SLASH_V = 3;
             const FILTER_VARIANTS = 6;
 
             // Shared, reusable filters (one set of variants for all slashes — far cheaper
@@ -1138,10 +1159,11 @@
                 });
                 return { thick, hair, w, h: H };
             }
-            // steep book-style angle: all cuts lean the same way ("/"), jittered
-            const slashRot = () => -rnd(63, 79);
-            const slashLen = (stripH) =>
-                Math.max(90, Math.min(300, stripH * rnd(0.34, 0.46)));
+            // shallow book-style angle: all cuts lean the same way ("\"), jittered
+            const slashRot = () => rnd(11, 28);
+            // body length crosses the strip with a modest overhang each side
+            const slashLen = (stripW) =>
+                Math.max(80, Math.min(240, stripW * rnd(1.15, 1.5)));
 
             // build an svg slash element from stored data, positioned at the click point.
             function buildSlash(data, anim) {
@@ -1172,11 +1194,10 @@
                 svg.innerHTML = `<g filter="url(#sltex${v})">${tp}</g><g filter="url(#slsharp${v})">${hp}</g>`;
 
                 if (anim) {
-                    // the "cut": a fast strike revealed from the TOP of the cut
-                    // downward (local +x maps up-right after the steep rotation,
-                    // so sweeping right-to-left reads as the knife coming down),
-                    // burning hot-bright for an instant (.fresh)
-                    svg.style.clipPath = "inset(-90% -8% -90% 102%)";
+                    // the "cut": a fast strike revealed left-to-right — with the
+                    // "\" tilt that sweeps down across the strip like a drawn
+                    // knife — burning hot-bright for an instant (.fresh)
+                    svg.style.clipPath = "inset(-90% 102% -90% -8%)";
                     svg.classList.add("fresh");
                     svg.getBoundingClientRect();
                     requestAnimationFrame(() => {
@@ -1302,7 +1323,13 @@
                 // geometry version (keeps position, re-rolls the shape/angle)
                 (c.slashes || []).forEach((sd, idx) => {
                     if (sd && sd.v !== SLASH_V) {
-                        const g = makeSlash(slashLen(c.h || 360));
+                        // strip may not be laid out yet; fall back to the
+                        // talisman art's ~0.22 width:height aspect
+                        const g = makeSlash(
+                            slashLen(
+                                strip.clientWidth || (c.h || 360) * 0.22,
+                            ),
+                        );
                         sd = Object.assign({}, sd, {
                             v: SLASH_V,
                             thick: g.thick,
@@ -1406,11 +1433,14 @@
                 const strip = card._strip,
                     slLayer = card._slLayer;
                 const r = strip.getBoundingClientRect();
-                // steep cut sized to the strip; soft-clamp the click point so the
+                // cut sized to the strip width; soft-clamp the click point so the
                 // solid body always crosses the paper instead of hanging in space
-                const len = slashLen(r.height);
+                const len = slashLen(r.width);
                 const g = makeSlash(len);
-                const vext = len * 0.42; // ~vertical half-extent of the body
+                const rot = slashRot();
+                // vertical half-extent of the tilted body at this angle
+                const vext =
+                    (len * 0.95 * Math.sin((rot * Math.PI) / 180)) / 2;
                 const data = {
                     v: SLASH_V,
                     thick: g.thick,
@@ -1419,15 +1449,15 @@
                     h: g.h,
                     left: clamp(
                         e.clientX - r.left,
-                        r.width * 0.22,
-                        r.width * 0.78,
+                        r.width * 0.32,
+                        r.width * 0.68,
                     ),
                     top: clamp(
                         e.clientY - r.top,
-                        vext * 0.75,
-                        r.height - vext * 0.75,
+                        vext + 6,
+                        r.height - vext - 6,
                     ),
-                    rot: slashRot(),
+                    rot,
                     seed: Math.floor(rnd(1, 999999)),
                 };
                 c.slashes = c.slashes || [];
@@ -1456,7 +1486,7 @@
                 last.getBoundingClientRect();
                 last.style.transition =
                     "clip-path .18s cubic-bezier(.55,0,.8,.4), opacity .18s ease";
-                last.style.clipPath = "inset(-90% -8% -90% 102%)";
+                last.style.clipPath = "inset(-90% 102% -90% -8%)";
                 last.style.opacity = "0.3";
                 setTimeout(() => last.remove(), 200);
                 if (card._countEl) card._countEl.textContent = c.slashes.length;
@@ -1488,10 +1518,14 @@
                 window.matchMedia &&
                 matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-            // a clone of the strip's visuals (art + counter + slashes), minus controls
+            // a clone of the strip's visuals (art + counter + slashes), minus controls.
+            // The clone must be visible even if the source strip was already hidden —
+            // cloneNode copies inline style, and an inherited visibility:hidden here
+            // is what made every rip ribbon render as nothing.
             function cloneStripVisual(strip) {
                 const clone = strip.cloneNode(true);
                 clone.classList.remove("cut", "grabbing");
+                clone.style.visibility = "";
                 const cc = clone.querySelector(".ctrls");
                 if (cc) cc.remove();
                 return clone;
@@ -1519,7 +1553,7 @@
                 else ripApart(card, strip, W, H, finish);
             }
 
-            // violently tear the strip into ragged ribbons + a burst of parchment shards
+            // violently tear the strip into ragged ribbons + a burst of paper scraps
             function ripApart(card, strip, W, H, done) {
                 const N = 6,
                     ROWS = 9;
@@ -1536,7 +1570,6 @@
                 wrap.className = "rip";
                 wrap.style.width = W + "px";
                 wrap.style.height = H + "px";
-                strip.style.visibility = "hidden";
 
                 // bright flash at the moment of the tear
                 const flash = document.createElement("div");
@@ -1574,7 +1607,7 @@
                     wrap.appendChild(rib);
                 }
 
-                // exploding parchment shards — light-coloured so the tear reads on black
+                // exploding paper scraps — light-coloured so the tear reads on black
                 for (let i = 0; i < 30; i++) {
                     const sh = document.createElement("div");
                     sh.className = "shard";
@@ -1590,6 +1623,9 @@
                     sh.style.animationDelay = rnd(0, 0.077).toFixed(3) + "s";
                     wrap.appendChild(sh);
                 }
+                // hide the source strip only AFTER cloning it into the ribbons —
+                // cloning first is what makes the ribbons visible at all
+                strip.style.visibility = "hidden";
                 card.appendChild(wrap);
                 setTimeout(done, 1270);
             }
@@ -1620,6 +1656,10 @@
                 wrap.style.height = H + "px";
                 const paper = cloneStripVisual(strip);
                 paper.style.filter = `url(#${fid})`;
+                // scorched edge inside the clone: masked and transformed with it
+                const char = document.createElement("div");
+                char.className = "char";
+                paper.appendChild(char);
                 wrap.appendChild(paper);
 
                 const flame = document.createElement("div");
@@ -1699,7 +1739,7 @@
                     // bottom-up consumption
                     paper.style.setProperty("--burn", (-16 + p * 140).toFixed(1) + "%");
                     // heat-warp that crawls and intensifies as it burns
-                    disp.setAttribute("scale", (5 + p * p * 50).toFixed(1));
+                    disp.setAttribute("scale", (5 + p * p * 38).toFixed(1));
                     turb.setAttribute(
                         "baseFrequency",
                         (0.012 + p * 0.022).toFixed(3) +
@@ -1710,17 +1750,26 @@
                     const flx = Math.sin(t * 33 + ph1) * 8 * p + Math.sin(t * 12) * 5;
                     const rot = Math.sin(t * 25 + ph2) * 10 * p + p * 9;
                     const skew = Math.sin(t * 29 + 1) * 10 * p;
-                    const lift = -p * 78;
-                    const sc = 1 - p * 0.2;
+                    const lift = -p * 56;
+                    const sc = 1 - p * 0.16;
                     paper.style.transform = `translate(${flx.toFixed(1)}px, ${lift.toFixed(1)}px) rotate(${rot.toFixed(1)}deg) skewX(${skew.toFixed(1)}deg) scale(${sc.toFixed(3)})`;
                     paper.style.opacity =
                         p > 0.82 ? (1 - (p - 0.82) / 0.18).toFixed(2) : "1";
-                    // the fire front rides up, flickering
-                    // lock the flame onto the dissolving edge so the orange never
-                    // lags the blackening. The mask's burn band sits at
-                    // (var(--burn)..+8%) from the bottom, i.e. centre ~(112 - 140p)%
-                    // from the top; ride ~3% ahead of it so fire leads the consumption.
-                    flame.style.top = (109 - p * 140).toFixed(1) + "%";
+                    // the dissolving edge in LOCAL paper space: the mask band spans
+                    // (--burn..+8%) from the bottom, so its centre sits at
+                    // ~(112 - 140p)% from the top; the fire rides ~3% ahead of it
+                    const edgeLocal = H * (1.09 - 1.4 * p);
+                    // the char band hugs the edge from above, inside the clone
+                    // (capped so it never dangles below the paper before ignition)
+                    char.style.top =
+                        (Math.min(edgeLocal, H) - 22).toFixed(1) + "px";
+                    // the flame lives OUTSIDE the transformed clone, so project the
+                    // edge into wrap space: scale is centred on the transform origin
+                    // (50% 12%), then the whole remnant lifts. (Rotation/skew only
+                    // wobble the edge a few px — the flicker covers that.)
+                    const originY = H * 0.12;
+                    const edgeWrap = originY + (edgeLocal - originY) * sc + lift;
+                    flame.style.top = edgeWrap.toFixed(1) + "px";
                     flame.style.opacity = (
                         p < 0.06 ? p / 0.06 : p > 0.92 ? (1 - p) / 0.08 : 1
                     ).toFixed(2);
