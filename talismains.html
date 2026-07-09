@@ -958,9 +958,14 @@
                                 !h.startsWith("/") &&
                                 !h.includes("../"),
                         )
-                        .map((h) => h.replace(/\/+$/, ""))
+                        // Caddy prefixes listing entries with "./"; strip it so
+                        // hrefs are bare filenames like python -m http.server's.
+                        .map((h) => h.replace(/\/+$/, "").replace(/^\.\//, ""))
                         .filter((h) => IMG_RE.test(h))
-                        .filter((h) => !ex.has(decodeURIComponent(h)));
+                        .filter(
+                            (h) =>
+                                !ex.has(decodeURIComponent(h).split("/").pop()),
+                        );
                     const uniq = Array.from(new Set(names)).sort((a, b) =>
                         a.toLowerCase().localeCompare(b.toLowerCase()),
                     );
