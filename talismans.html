@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>CAIN — Talismains</title>
+        <title>CAIN — Talismans</title>
         <!-- Fonts: Source Sans 3 ≈ Acumin Pro (body), Grenze Gotisch ≈ Cuasigothic (details/numbers) -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -67,7 +67,7 @@
                 box-shadow: inset 0 0 220px 40px rgba(120, 0, 0, 0.3);
             }
 
-            /* ---- stage where talismains live ---- */
+            /* ---- stage where talismans live ---- */
             #stage {
                 position: fixed;
                 inset: 0;
@@ -235,10 +235,10 @@
                 color: #fff;
             }
 
-            /* ---- talismain card ---- */
+            /* ---- talisman card ---- */
             /* No z-index on .card on purpose: cards must NOT form their own stacking
      context, so every .strip (z-index:2) paints above every .label (z-index:1)
-     globally — a label can never cover an adjacent talismain's clickable area.
+     globally — a label can never cover an adjacent talisman's clickable area.
      Front-to-back ordering among cards is handled by DOM order (see bringFront). */
             .card {
                 position: absolute;
@@ -367,7 +367,7 @@
                 }
             }
 
-            /* text label next to talismain — shrinks to its content so a word or two
+            /* text label next to talisman — shrinks to its content so a word or two
      stays tiny; sits BELOW strips (z-index:1) so it never blocks clicks. */
             .label {
                 position: relative;
@@ -423,10 +423,10 @@
             }
 
             /* per-card hover controls */
-            /* controls float just ABOVE the top of the talismain (clear of the seal art
+            /* controls float just ABOVE the top of the talisman (clear of the seal art
      and the label). The whole box stays pointer-active even while invisible, so
      simply mousing into the airspace where the buttons live reveals them — no
-     need to touch the talismain first. Generous padding fattens that hover
+     need to touch the talisman first. Generous padding fattens that hover
      target and bridges the gap down to the strip so they never flicker away. */
             .ctrls {
                 position: absolute;
@@ -869,7 +869,7 @@
         <img id="detail" alt="" title="click to shuffle corner art" />
 
         <div id="bar">
-            <button class="btn accent" id="addBtn">✛ Add Talismain</button>
+            <button class="btn accent" id="addBtn">✛ Add Talisman</button>
             <div id="bgwrap">
                 <button class="btn" id="bgBtn">Backgrounds ▾</button>
                 <div id="bgmenu">
@@ -901,7 +901,7 @@
                     ?
                 </button>
                 <div id="helpPanel">
-                    <b>Drag</b> a talismain to move it · <b>Click</b> it to
+                    <b>Drag</b> a talisman to move it · <b>Click</b> it to
                     carve a slash · <b>Right-click</b> removes a slash · the
                     counter tracks <b>slashes / N</b>; <b>click the N</b> to set
                     the target · <b>Click beside it</b> to add text ·
@@ -922,8 +922,8 @@
             // as a plain file:// document (browsers block folder listing there).
             // Served through the launcher's local web server, loadFolders() below
             // replaces them with a live read of the folders, so images you drop
-            // into reference/{talismains,details,backgrounds} show up on refresh.
-            let TALISMAINS = [
+            // into reference/{talismans,details,backgrounds} show up on refresh.
+            let TALISMANS = [
                 "CAIN_1.4-0471-p079.png",
                 "CAIN_1.4-0505-p081.png",
                 "CAIN_1.4-0506-p081.png",
@@ -935,7 +935,7 @@
                 "CAIN_1.4-0513-p081.png",
                 "CAIN_1.4-0531-p081.png",
                 "empty.png",
-            ].map((f) => ROOT + "talismains/" + f);
+            ].map((f) => ROOT + "talismans/" + f);
 
             let DETAILS = [
                 "CAIN_1.4-0007-p006.png",
@@ -981,7 +981,7 @@
             const IMG_RE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i;
             // files living in a folder that should NOT be offered as choices
             const FOLDER_EXCLUDE = {
-                talismains: new Set(["slashes.png"]), // the reference image, not a strip
+                talismans: new Set(["slashes.png"]), // the reference image, not a strip
             };
             async function listDir(sub) {
                 try {
@@ -1025,11 +1025,11 @@
             }
             async function loadFolders() {
                 const [tal, det, bg] = await Promise.all([
-                    listDir("talismains"),
+                    listDir("talismans"),
                     listDir("details"),
                     listDir("backgrounds"),
                 ]);
-                if (tal) TALISMAINS = tal;
+                if (tal) TALISMANS = tal;
                 if (det) DETAILS = det;
                 if (bg) BACKGROUNDS = bg;
             }
@@ -1051,10 +1051,20 @@
             let addOffset = 0;
 
             /* ---------------- persistence ---------------- */
+            /* one-time migration of saves from the old misspelled keys */
+            try {
+                for (const k of ["cain_talismans", "cain_talismans_userbgs"]) {
+                    const v = localStorage.getItem(
+                        k.replace("talismans", "talismains"),
+                    );
+                    if (v !== null && localStorage.getItem(k) === null)
+                        localStorage.setItem(k, v);
+                }
+            } catch (e) {}
             function save() {
                 try {
                     localStorage.setItem(
-                        "cain_talismains",
+                        "cain_talismans",
                         JSON.stringify(state),
                     );
                 } catch (e) {}
@@ -1062,7 +1072,7 @@
             function load() {
                 try {
                     const s = JSON.parse(
-                        localStorage.getItem("cain_talismains"),
+                        localStorage.getItem("cain_talismans"),
                     );
                     if (s && s.cards) return s;
                 } catch (e) {}
@@ -1072,7 +1082,7 @@
             /* user-uploaded backgrounds live under their own key so their big
    data URLs aren't rewritten with every board save; state.bg refers to
    them as "user:<id>". They exist only in this browser's localStorage. */
-            const USERBG_KEY = "cain_talismains_userbgs";
+            const USERBG_KEY = "cain_talismans_userbgs";
             let userBgs = (() => {
                 try {
                     const a = JSON.parse(localStorage.getItem(USERBG_KEY));
@@ -1141,7 +1151,7 @@
             }
 
             /* ---------------- slash generation ----------------
-   Modeled on the book's slashes (reference/talismains/slashes.png — drawn
+   Modeled on the book's slashes (reference/talismans/slashes.png — drawn
    for a HORIZONTAL talisman, so rotate it 90° to see the intended look on
    our vertical strips): each slash is a shallow "\" cut, right end dipping
    ~12–28°, crossing the full strip width — a solid, ragged brush-stroke
@@ -1446,8 +1456,8 @@
                 swapB.addEventListener("click", () => {
                     let n;
                     do {
-                        n = pick(TALISMAINS);
-                    } while (n === c.img && TALISMAINS.length > 1);
+                        n = pick(TALISMANS);
+                    } while (n === c.img && TALISMANS.length > 1);
                     c.img = n;
                     img.src = n;
                     save();
@@ -1456,7 +1466,7 @@
                     dissolveCard(card, c, strip);
                 });
 
-                // controls live inside the strip so they stay centred over the talismain
+                // controls live inside the strip so they stay centred over the talisman
                 // (not the card+label), keeping them clear of the label's ✎ on thin strips
                 strip.appendChild(ctrls);
                 const rsz = document.createElement("div");
@@ -1671,8 +1681,8 @@
             }
 
             /* ---------- resolve state + dramatic deletion ----------
-               A talismain is "full" once its slash count reaches its target N.
-               Full talismains show a ✓ (resolved) instead of ✕, and delete with a
+               A talisman is "full" once its slash count reaches its target N.
+               Full talismans show a ✓ (resolved) instead of ✕, and delete with a
                burn-away; unfilled ones tear into ribbons. */
             function isFilled(c) {
                 const t = parseInt(c.target, 10);
@@ -1826,7 +1836,7 @@
             }
 
             // burn the strip away bottom-up — driven frame-by-frame so the whole
-            // talismain writhes, the heat-warp crawls and grows, and it sheds sparks,
+            // talisman writhes, the heat-warp crawls and grows, and it sheds sparks,
             // embers and smoke. Fast and violent.
             let burnSeq = 0;
             function burnAway(card, strip, W, H, done) {
@@ -1977,10 +1987,10 @@
             }
 
             /* ---------------- toolbar actions ---------------- */
-            function addTalismain(img, x, y, target, text) {
+            function addTalisman(img, x, y, target, text) {
                 const c = {
                     id: nextId++,
-                    img: img || pick(TALISMAINS),
+                    img: img || pick(TALISMANS),
                     x: x != null ? x : 90 + (addOffset % 6) * 46,
                     y: y != null ? y : 90 + (addOffset % 6) * 30,
                     target: target != null ? target : "",
@@ -2097,7 +2107,7 @@
 
             document
                 .getElementById("addBtn")
-                .addEventListener("click", () => addTalismain());
+                .addEventListener("click", () => addTalisman());
             document
                 .getElementById("shuffleBtn")
                 .addEventListener("click", shuffleDetail);
@@ -2107,7 +2117,7 @@
             document
                 .getElementById("clearBtn")
                 .addEventListener("click", () => {
-                    if (!confirm("Remove all talismains?")) return;
+                    if (!confirm("Remove all talismans?")) return;
                     state.cards = [];
                     stage.innerHTML = "";
                     save();
@@ -2195,15 +2205,15 @@
                         ROOT + "backgrounds/CAIN_1.4-0436-p073.png",
                     );
                     shuffleDetail();
-                    addTalismain(
-                        ROOT + "talismains/CAIN_1.4-0512-p081.png",
+                    addTalisman(
+                        ROOT + "talismans/CAIN_1.4-0512-p081.png",
                         140,
                         110,
                         3,
                         "TENSION",
                     );
-                    addTalismain(
-                        ROOT + "talismains/CAIN_1.4-0513-p081.png",
+                    addTalisman(
+                        ROOT + "talismans/CAIN_1.4-0513-p081.png",
                         400,
                         110,
                         6,

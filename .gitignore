@@ -1,5 +1,5 @@
 # This repo tracks the code files plus the image assets the talisman board
-# uses (reference/{talismains,details,backgrounds}). The CAIN rulebook
+# uses (reference/{talismans,details,backgrounds}). The CAIN rulebook
 # PDFs/plaintext, the generated notes, and the rest of the reference material
 # are deliberately left untracked (large, mostly third-party material).
 # Whitelist approach: ignore everything, then re-include what we keep.
@@ -9,14 +9,14 @@
 
 # ...but keep the code files and this ignore list.
 !.gitignore
-!talismains.html
-!open-talismains.command
+!talismans.html
+!open-talismans.command
 
 # ...and the image folders the board draws from. A parent dir must be
 # un-ignored before anything inside it can be, hence the two-step.
 !/reference/
 /reference/*
-!/reference/talismains/
+!/reference/talismans/
 !/reference/details/
 !/reference/backgrounds/
 

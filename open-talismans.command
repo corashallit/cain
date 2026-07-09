@@ -1,5 +1,5 @@
 #!/bin/bash
-# Double-click this file to run the CAIN talismains board through a small local
+# Double-click this file to run the CAIN talismans board through a small local
 # web server. Serving it (instead of opening the .html directly) lets the page
 # read the reference/ folders live -- drop new images into reference/details or
 # reference/backgrounds, then just refresh the page to see them.
@@ -17,8 +17,8 @@ if [ -z "$PY" ]; then
   exit 1
 fi
 
-URL="http://localhost:${PORT}/talismains.html"
-echo "Serving CAIN talismains at:"
+URL="http://localhost:${PORT}/talismans.html"
+echo "Serving CAIN talismans at:"
 echo "    $URL"
 echo
 echo "Add art to reference/details or reference/backgrounds, then refresh the page."
