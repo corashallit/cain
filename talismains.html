@@ -102,10 +102,10 @@
                 gap: 8px;
                 align-items: flex-start;
                 flex-wrap: wrap;
-                opacity: 0.22;
+                opacity: 0.72;
                 transition: opacity 0.4s ease;
             }
-            /* fade the toolbar out until it's hovered (or a menu/help panel is open) */
+            /* dim the toolbar until it's hovered (or a menu/help panel is open) */
             #bar:hover,
             #bar.menuopen {
                 opacity: 1;
@@ -481,6 +481,40 @@
                 color: #fff;
                 background: #3a2a06;
             }
+
+            /* ---- bottom-right resize grip: generous invisible hotspot with a
+     faint corner bracket that appears while hovering the card ---- */
+            .rsz {
+                position: absolute;
+                right: -7px;
+                bottom: -7px;
+                width: 20px;
+                height: 20px;
+                cursor: nwse-resize;
+                z-index: 5;
+            }
+            .rsz:after {
+                content: "";
+                position: absolute;
+                right: 7px;
+                bottom: 7px;
+                width: 13px;
+                height: 13px;
+                /* dark dog-ear triangle so it reads on the white paper */
+                background: linear-gradient(
+                    to top left,
+                    rgba(25, 22, 20, 0.6) 50%,
+                    transparent 50%
+                );
+                opacity: 0;
+                transition: opacity 0.15s;
+            }
+            .card:hover .rsz:after {
+                opacity: 0.5;
+            }
+            .rsz:hover:after {
+                opacity: 1;
+            }
             .card.filled .num {
                 animation: fullpulse 1.8s ease-in-out infinite;
             }
@@ -816,6 +850,14 @@
                 color: #c98;
                 font-weight: 400;
             }
+            #helpPanel .credit {
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid #333;
+                color: #888;
+                font-size: 11px;
+                line-height: 1.5;
+            }
         </style>
     </head>
     <body>
@@ -832,6 +874,7 @@
                 <button class="btn" id="bgBtn">Backgrounds ▾</button>
                 <div id="bgmenu">
                     <div class="row" id="bgRow"></div>
+                    <input type="file" id="bgUpload" accept="image/*" hidden />
                     <label>Placement</label>
                     <div class="fitrow" id="bgFitRow">
                         <button data-fit="cover">⤢ Fill</button>
@@ -862,10 +905,13 @@
                     carve a slash · <b>Right-click</b> removes a slash · the
                     counter tracks <b>slashes / N</b>; <b>click the N</b> to set
                     the target · <b>Click beside it</b> to add text ·
-                    <b>Ctrl/⌘ + scroll</b> over one to resize · Hover a strip
-                    for <b>swap art / delete</b> · once slashes reach
-                    <b>N</b> the ✕ becomes a <b>✓</b> — deleting a full talismain
-                    <b>burns</b> it away, an unfilled one <b>tears apart</b>.
+                    <b>Ctrl/⌘ + scroll</b> or <b>drag the ◢ corner</b> to
+                    resize · Hover a strip for <b>swap art / delete</b>.
+                    <div class="credit">
+                        CAIN and the artwork on this board belong to Tom
+                        Bloom. This is an unofficial, fan-made play aid — not
+                        affiliated with or endorsed by him.
+                    </div>
                 </div>
             </div>
         </div>
@@ -885,6 +931,7 @@
                 "CAIN_1.4-0508-p081.png",
                 "CAIN_1.4-0509-p081.png",
                 "CAIN_1.4-0510-p081.png",
+                "CAIN_1.4-0512-p081.png",
                 "CAIN_1.4-0513-p081.png",
                 "CAIN_1.4-0531-p081.png",
                 "empty.png",
@@ -1020,6 +1067,77 @@
                     if (s && s.cards) return s;
                 } catch (e) {}
                 return null;
+            }
+
+            /* user-uploaded backgrounds live under their own key so their big
+   data URLs aren't rewritten with every board save; state.bg refers to
+   them as "user:<id>". They exist only in this browser's localStorage. */
+            const USERBG_KEY = "cain_talismains_userbgs";
+            let userBgs = (() => {
+                try {
+                    const a = JSON.parse(localStorage.getItem(USERBG_KEY));
+                    if (Array.isArray(a)) return a;
+                } catch (e) {}
+                return [];
+            })();
+            function saveUserBgs() {
+                try {
+                    localStorage.setItem(USERBG_KEY, JSON.stringify(userBgs));
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+            function userBgSrc(id) {
+                const b = userBgs.find((x) => x.id === id);
+                return b ? b.data : null;
+            }
+            // Downscale + re-encode as JPEG so a phone photo doesn't blow the
+            // ~5MB localStorage quota; backgrounds sit behind a dim layer, so
+            // the quality loss is invisible in practice.
+            async function addUserBg(file) {
+                const obj = URL.createObjectURL(file);
+                try {
+                    const img = await new Promise((res, rej) => {
+                        const i = new Image();
+                        i.onload = () => res(i);
+                        i.onerror = () => rej(new Error("bad image"));
+                        i.src = obj;
+                    });
+                    const MAX = 1920;
+                    const k = Math.min(
+                        1,
+                        MAX / Math.max(img.width, img.height),
+                    );
+                    const cv = document.createElement("canvas");
+                    cv.width = Math.max(1, Math.round(img.width * k));
+                    cv.height = Math.max(1, Math.round(img.height * k));
+                    cv.getContext("2d").drawImage(
+                        img,
+                        0,
+                        0,
+                        cv.width,
+                        cv.height,
+                    );
+                    const id =
+                        Date.now().toString(36) +
+                        Math.random().toString(36).slice(2, 6);
+                    userBgs.push({
+                        id,
+                        data: cv.toDataURL("image/jpeg", 0.82),
+                    });
+                    if (!saveUserBgs()) {
+                        userBgs.pop();
+                        alert(
+                            "No room left in this browser's storage — right-click an uploaded background to remove it, then try again.",
+                        );
+                        return;
+                    }
+                    buildBgMenu();
+                    setBackground("user:" + id);
+                } finally {
+                    URL.revokeObjectURL(obj);
+                }
             }
 
             /* ---------------- slash generation ----------------
@@ -1341,6 +1459,11 @@
                 // controls live inside the strip so they stay centred over the talismain
                 // (not the card+label), keeping them clear of the label's ✎ on thin strips
                 strip.appendChild(ctrls);
+                const rsz = document.createElement("div");
+                rsz.className = "rsz";
+                rsz.title = "drag to resize";
+                strip.appendChild(rsz);
+                card._rsz = rsz;
                 card.append(strip, label);
                 card._data = c;
                 card._strip = strip;
@@ -1454,6 +1577,32 @@
                     },
                     { passive: false },
                 );
+
+                // dragging the corner grip resizes too. Width follows the art's
+                // aspect, so the vertical cursor travel drives the height 1:1.
+                let rs = null;
+                card._rsz.addEventListener("mousedown", (e) => {
+                    if (e.button !== 0) return;
+                    e.stopPropagation();
+                    e.preventDefault();
+                    rs = { y: e.clientY, oh: c.h || 360 };
+                    bringFront(card);
+                    document.body.style.cursor = "nwse-resize";
+                });
+                window.addEventListener("mousemove", (e) => {
+                    if (!rs) return;
+                    c.h = Math.max(
+                        160,
+                        Math.min(760, rs.oh + (e.clientY - rs.y)),
+                    );
+                    card.style.setProperty("--h", c.h + "px");
+                });
+                window.addEventListener("mouseup", () => {
+                    if (!rs) return;
+                    rs = null;
+                    document.body.style.cursor = "";
+                    save();
+                });
             }
 
             function addSlash(c, card, e) {
@@ -1828,14 +1977,14 @@
             }
 
             /* ---------------- toolbar actions ---------------- */
-            function addTalismain(img, x, y) {
+            function addTalismain(img, x, y, target, text) {
                 const c = {
                     id: nextId++,
                     img: img || pick(TALISMAINS),
                     x: x != null ? x : 90 + (addOffset % 6) * 46,
                     y: y != null ? y : 90 + (addOffset % 6) * 30,
-                    target: "",
-                    text: "",
+                    target: target != null ? target : "",
+                    text: text || "",
                     slashes: [],
                     h: 360,
                     z: ++zTop,
@@ -1849,7 +1998,11 @@
             function setBackground(src) {
                 state.bg = src;
                 const bg = document.getElementById("bg");
-                bg.style.backgroundImage = src ? `url("${src}")` : "none";
+                const url =
+                    src && src.startsWith("user:")
+                        ? userBgSrc(src.slice(5))
+                        : src;
+                bg.style.backgroundImage = url ? `url("${url}")` : "none";
                 document.querySelectorAll("#bgRow .thumb").forEach((t) => {
                     t.classList.toggle("sel", t.dataset.src === src);
                 });
@@ -1908,6 +2061,38 @@
                     t.addEventListener("click", () => setBackground(src));
                     row.appendChild(t);
                 });
+                userBgs.forEach((b) => {
+                    const t = document.createElement("img");
+                    t.className = "thumb";
+                    t.src = b.data;
+                    t.dataset.src = "user:" + b.id;
+                    t.alt = "";
+                    t.title = "your upload — right-click to remove";
+                    t.addEventListener("click", () =>
+                        setBackground("user:" + b.id),
+                    );
+                    t.addEventListener("contextmenu", (e) => {
+                        e.preventDefault();
+                        if (!confirm("Remove this uploaded background?"))
+                            return;
+                        userBgs = userBgs.filter((x) => x.id !== b.id);
+                        saveUserBgs();
+                        if (state.bg === "user:" + b.id) setBackground(null);
+                        buildBgMenu();
+                    });
+                    row.appendChild(t);
+                });
+                const up = document.createElement("div");
+                up.className = "none";
+                up.textContent = "+ upload";
+                up.title = "add your own background (kept only in this browser)";
+                up.addEventListener("click", () =>
+                    document.getElementById("bgUpload").click(),
+                );
+                row.appendChild(up);
+                row.querySelectorAll(".thumb").forEach((t) =>
+                    t.classList.toggle("sel", t.dataset.src === state.bg),
+                );
             }
 
             document
@@ -1958,6 +2143,18 @@
                     if (!b) return;
                     setBgFit(b.dataset.fit);
                 });
+            document
+                .getElementById("bgUpload")
+                .addEventListener("change", async (e) => {
+                    const f = e.target.files && e.target.files[0];
+                    e.target.value = "";
+                    if (!f) return;
+                    try {
+                        await addUserBg(f);
+                    } catch (err) {
+                        alert("Couldn't read that image file.");
+                    }
+                });
 
             /* ---------------- boot ---------------- */
             function init() {
@@ -1990,11 +2187,28 @@
                     document.getElementById("detail").src =
                         state.detail || (state.detail = pick(DETAILS));
                 } else {
+                    // first visit: TENSION + PRESSURE counters over a default
+                    // background pinned to the bottom of the screen
                     setBgDim(55);
-                    setBgFit("cover");
+                    setBgFit("bottom");
+                    setBackground(
+                        ROOT + "backgrounds/CAIN_1.4-0436-p073.png",
+                    );
                     shuffleDetail();
-                    // start with one talismain so the board isn't empty
-                    addTalismain(TALISMAINS[1] || TALISMAINS[0], 140, 110);
+                    addTalismain(
+                        ROOT + "talismains/CAIN_1.4-0512-p081.png",
+                        140,
+                        110,
+                        3,
+                        "TENSION",
+                    );
+                    addTalismain(
+                        ROOT + "talismains/CAIN_1.4-0513-p081.png",
+                        400,
+                        110,
+                        6,
+                        "PRESSURE",
+                    );
                 }
             }
 
