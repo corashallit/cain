@@ -264,20 +264,24 @@
                 filter: drop-shadow(3px 6px 10px rgba(0, 0, 0, 0.75));
             }
             .strip.cut {
-                animation: shake 0.22s ease;
+                animation: shake 0.26s cubic-bezier(0.25, 0.5, 0.3, 1);
             }
+            /* the knife lands: a hard perpendicular jolt that rings down */
             @keyframes shake {
                 0% {
                     transform: translate(0, 0);
                 }
-                20% {
-                    transform: translate(-2px, 1px) rotate(-0.4deg);
+                12% {
+                    transform: translate(-5px, 3px) rotate(-1.2deg);
                 }
-                45% {
-                    transform: translate(2px, -1px) rotate(0.5deg);
+                32% {
+                    transform: translate(4px, -2px) rotate(0.9deg);
                 }
-                70% {
-                    transform: translate(-1px, 1px);
+                55% {
+                    transform: translate(-2px, 1px) rotate(-0.45deg);
+                }
+                78% {
+                    transform: translate(1px, -1px) rotate(0.2deg);
                 }
                 100% {
                     transform: translate(0, 0);
@@ -348,13 +352,18 @@
                 overflow: visible;
                 will-change: transform;
             }
-            svg.slash.dying {
-                animation: slashOut 0.22s ease forwards;
+            /* the instant a cut lands it burns hot-bright, then cools to plain red */
+            svg.slash.fresh {
+                animation: slashflash 0.45s cubic-bezier(0.2, 0.6, 0.3, 1);
             }
-            @keyframes slashOut {
-                to {
-                    opacity: 0;
-                    transform: var(--t) scale(0.6);
+            @keyframes slashflash {
+                0% {
+                    filter: brightness(2.1) saturate(1.4)
+                        drop-shadow(0 0 8px rgba(255, 60, 30, 0.9));
+                }
+                100% {
+                    filter: brightness(1) saturate(1)
+                        drop-shadow(0 0 0 rgba(255, 60, 30, 0));
                 }
             }
 
@@ -415,9 +424,10 @@
 
             /* per-card hover controls */
             /* controls float just ABOVE the top of the talismain (clear of the seal art
-     and the label). The transparent padding-bottom bridges the gap down to the
-     strip, so moving up onto them never crosses a dead zone and they don't
-     vanish — the hit-box just extends a little above the visible talismain. */
+     and the label). The whole box stays pointer-active even while invisible, so
+     simply mousing into the airspace where the buttons live reveals them — no
+     need to touch the talismain first. Generous padding fattens that hover
+     target and bridges the gap down to the strip so they never flicker away. */
             .ctrls {
                 position: absolute;
                 bottom: 100%;
@@ -425,17 +435,18 @@
                 transform: translateX(-50%);
                 display: flex;
                 gap: 5px;
-                padding-bottom: 7px;
+                padding: 12px 18px 8px;
                 opacity: 0;
                 transition: opacity 0.15s;
                 z-index: 7;
-                pointer-events: none;
+                pointer-events: auto;
             }
             .card:hover .ctrls {
                 opacity: 1;
-                pointer-events: auto;
             }
+            /* invisible buttons must not be clickable — they arm only once shown */
             .ctrls button {
+                pointer-events: none;
                 width: 22px;
                 height: 22px;
                 border-radius: 50%;
@@ -449,6 +460,9 @@
                 justify-content: center;
                 padding: 0;
                 line-height: 1;
+            }
+            .card:hover .ctrls button {
+                pointer-events: auto;
             }
             .ctrls button:hover {
                 border-color: var(--crimson);
@@ -719,6 +733,10 @@
                 .card.filled .num {
                     animation: none;
                 }
+                .strip.cut,
+                svg.slash.fresh {
+                    animation: none;
+                }
             }
 
             #help {
@@ -926,6 +944,7 @@
             const stage = document.getElementById("stage");
             const rnd = (a, b) => a + Math.random() * (b - a);
             const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+            const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
             let state = {
                 cards: [],
@@ -958,10 +977,13 @@
             }
 
             /* ---------------- slash generation ----------------
-   A slash is a BUNDLE of separate pure-red strokes (like the CAIN slashes.png):
-   one or two crisp hairlines + a couple of thicker brush strokes, all tapered
-   to sharp points, semi-transparent, and dry-brush textured (streaky gaps) via
-   reusable SVG filters. No dark outline — every stroke is red. */
+   Modeled directly on the book's slashes (reference/talismains/slashes.png):
+   each slash is a STEEP near-vertical cut leaning right — a solid, ragged
+   brush-stroke body (mostly opaque, blunt marker-like ends) with ONE long
+   hairline running through the same axis that thins out and breaks into
+   flecks past the tips. Dry-brush texture comes from reusable SVG filters.
+   Stored slash geometry carries v:2 — older saves are regenerated on load. */
+            const SLASH_V = 2;
             const FILTER_VARIANTS = 6;
 
             // Shared, reusable filters (one set of variants for all slashes — far cheaper
@@ -982,23 +1004,25 @@
     <filter id="sltex${i}" x="-15%" y="-180%" width="130%" height="460%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="${(0.018 + 0.004 * i).toFixed(3)} ${(0.42 + 0.04 * i).toFixed(3)}" numOctaves="2" seed="${i * 7 + 3}" result="n"/>
       <feColorMatrix in="n" type="matrix"
-        values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  2.0 0 0 0 -0.55" result="m"/>
+        values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  5 0 0 0 -0.45" result="m"/>
       <feComposite in="SourceGraphic" in2="m" operator="in" result="tx"/>
-      <feDisplacementMap in="tx" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+      <feDisplacementMap in="tx" in2="n" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
     <filter id="slsharp${i}" x="-15%" y="-180%" width="130%" height="460%" color-interpolation-filters="sRGB">
       <feTurbulence type="fractalNoise" baseFrequency="${(0.05 + 0.006 * i).toFixed(3)} 0.18" numOctaves="2" seed="${i * 5 + 1}" result="n"/>
       <feColorMatrix in="n" type="matrix"
-        values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.25 0 0 0 -0.12" result="m"/>
+        values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.35 0 0 0 -0.18" result="m"/>
       <feComposite in="SourceGraphic" in2="m" operator="in" result="tx"/>
-      <feDisplacementMap in="tx" in2="n" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+      <feDisplacementMap in="tx" in2="n" scale="2" xChannelSelector="R" yChannelSelector="G"/>
     </filter>`;
                 }
                 svg.innerHTML = `<defs>${defs}</defs>`;
                 document.body.appendChild(svg);
             })();
 
-            // one tapered "spindle" stroke (filled outline that narrows to sharp tips)
+            // one tapered "spindle" stroke (filled outline that narrows to sharp tips).
+            // plateauK > 1 turns the smooth taper into a marker-like plateau: the
+            // stroke ramps to full width quickly, stays fat, and ends bluntly.
             function spindlePath(
                 len,
                 x0,
@@ -1008,6 +1032,7 @@
                 drift,
                 maxHalf,
                 taperPow,
+                plateauK = 1,
             ) {
                 const segs = 16,
                     pts = [];
@@ -1016,13 +1041,17 @@
                     const x = x0 + t * len;
                     const y =
                         cy +
-                        Math.sin(t * Math.PI * 1.4 + phase) * amp +
+                        Math.sin(t * Math.PI * 1.15 + phase) * amp +
                         drift * (t - 0.5) * 2;
                     pts.push([x, y, t]);
                 }
                 const c01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
                 const half = (t) =>
-                    maxHalf * Math.pow(Math.sin(Math.PI * c01(t)), taperPow);
+                    maxHalf *
+                    Math.pow(
+                        Math.min(1, Math.sin(Math.PI * c01(t)) * plateauK),
+                        taperPow,
+                    );
                 const top = [],
                     bot = [];
                 for (let i = 0; i < pts.length; i++) {
@@ -1054,58 +1083,65 @@
                 "#f5160a",
                 "#c50400",
             ];
-            // build the bundle: a few CLOSELY-OVERLAPPING textured thick strokes that read
-            // as one mark, plus exactly ONE crisp sharp hairline. Everything shares the
-            // same axis (small offsets only) so a single slash never reads as several.
+            // build the bundle: a solid ragged BODY (one or two strokes stacked nearly
+            // on top of each other, mostly opaque, blunt ends) + exactly ONE long thin
+            // hairline through the same axis whose tips thin out and fleck apart.
+            // `len` is the body length; the hairline overshoots it on both ends.
             function makeSlash(len) {
                 const H = 46,
                     cy = H / 2;
-                const w = Math.ceil(len * 1.45) + 16,
+                const hairLen = len * rnd(1.3, 1.55);
+                const w = Math.ceil(hairLen) + 24,
                     cx = w / 2;
-                const phase = rnd(0, Math.PI * 2),
-                    drift = rnd(-2.5, 2.5),
-                    amp = rnd(1.2, 2.8);
-                const baseOff = rnd(-1.5, 1.5); // the whole bundle's centre line
+                // near-straight: a whisper of bow, tiny phase jitter (big random
+                // phases made banana/S-curves; the book's cuts are almost straight)
+                const phase = rnd(-0.5, 0.5),
+                    drift = rnd(-1.6, 1.6),
+                    amp = rnd(0.9, 2.0);
+                const baseOff = rnd(-1.2, 1.2); // the whole bundle's centre line
                 const thick = [],
                     hair = [];
-                // 2–3 thick strokes stacked almost on top of each other (tiny offsets) so
-                // they build one textured body rather than parallel lines
-                const nThick = 2 + (Math.random() < 0.6 ? 1 : 0);
+                // sometimes the brush doubles back: a second body stroke almost on top
+                const nThick = 1 + (Math.random() < 0.35 ? 1 : 0);
                 for (let k = 0; k < nThick; k++) {
-                    const L = len * rnd(0.86, 1.0);
+                    const L = len * rnd(0.8, 0.97);
                     thick.push({
                         d: spindlePath(
                             L,
-                            cx - L / 2 + rnd(-2, 2),
-                            cy + baseOff + rnd(-1.4, 1.4),
+                            cx - L / 2 + rnd(-len * 0.07, len * 0.07),
+                            cy + baseOff + rnd(-1.0, 1.0),
                             amp * rnd(0.85, 1.1),
-                            phase + rnd(-0.35, 0.35),
+                            phase + rnd(-0.2, 0.2),
                             drift,
-                            rnd(2.2, 3.6),
-                            0.55,
+                            len * rnd(0.026, 0.034), // fat: width scales with length
+                            0.8,
+                            2.4, // plateau: full width fast, blunt ragged ends
                         ),
-                        fill: REDS[[0, 2, 3][k % 3]],
-                        opacity: rnd(0.78, 0.87),
+                        fill: REDS[[0, 2][k % 2]],
+                        opacity: k === 0 ? rnd(0.96, 1) : rnd(0.85, 0.92),
                     });
                 }
-                // exactly ONE sharp hairline, same axis, with longer tails — the readable cut
-                const L = len * rnd(1.05, 1.35);
+                // the single hairline: runs the whole cut and well past both ends
                 hair.push({
                     d: spindlePath(
-                        L,
-                        cx - L / 2 + rnd(-2, 2),
-                        cy + baseOff + rnd(-1.6, 1.6),
-                        amp * rnd(0.9, 1.15),
-                        phase + rnd(-0.25, 0.25),
-                        drift * rnd(0.9, 1.2),
-                        rnd(0.5, 0.85),
-                        0.42,
+                        hairLen,
+                        cx - hairLen / 2,
+                        cy + baseOff + rnd(-1.1, 1.1),
+                        amp * rnd(0.95, 1.1),
+                        phase + rnd(-0.15, 0.15),
+                        drift * rnd(1.0, 1.3),
+                        rnd(0.55, 0.9),
+                        0.55,
                     ),
                     fill: REDS[1],
-                    opacity: rnd(0.92, 0.99),
+                    opacity: rnd(0.9, 0.98),
                 });
                 return { thick, hair, w, h: H };
             }
+            // steep book-style angle: all cuts lean the same way ("/"), jittered
+            const slashRot = () => -rnd(63, 79);
+            const slashLen = (stripH) =>
+                Math.max(90, Math.min(300, stripH * rnd(0.34, 0.46)));
 
             // build an svg slash element from stored data, positioned at the click point.
             function buildSlash(data, anim) {
@@ -1118,9 +1154,7 @@
                 svg.style.height = h + "px";
                 svg.style.left = left + "px";
                 svg.style.top = top + "px";
-                const tf = `translate(-50%,-50%) rotate(${rot}deg)`;
-                svg.style.transform = tf;
-                svg.style.setProperty("--t", tf);
+                svg.style.transform = `translate(-50%,-50%) rotate(${rot}deg)`;
 
                 const v = (seed || 0) % FILTER_VARIANTS;
                 const tp = (thick || [])
@@ -1138,12 +1172,16 @@
                 svg.innerHTML = `<g filter="url(#sltex${v})">${tp}</g><g filter="url(#slsharp${v})">${hp}</g>`;
 
                 if (anim) {
-                    // the "cut": sweep a reveal left-to-right along the slash
-                    svg.style.clipPath = "inset(-90% 100% -90% -8%)";
+                    // the "cut": a fast strike revealed from the TOP of the cut
+                    // downward (local +x maps up-right after the steep rotation,
+                    // so sweeping right-to-left reads as the knife coming down),
+                    // burning hot-bright for an instant (.fresh)
+                    svg.style.clipPath = "inset(-90% -8% -90% 102%)";
+                    svg.classList.add("fresh");
                     svg.getBoundingClientRect();
                     requestAnimationFrame(() => {
                         svg.style.transition =
-                            "clip-path .15s cubic-bezier(.2,.7,.2,1)";
+                            "clip-path .13s cubic-bezier(.3,.1,.2,1)";
                         svg.style.clipPath = "inset(-90% -8% -90% -8%)";
                     });
                 }
@@ -1234,6 +1272,9 @@
                 delB.title = "delete";
                 card._delB = delB;
                 ctrls.append(swapB, delB);
+                // the ctrls box is always pointer-active (hover affordance), so a
+                // click in its padding must not fall through and carve a slash
+                ctrls.addEventListener("mousedown", (e) => e.stopPropagation());
                 swapB.addEventListener("mousedown", (e) => e.stopPropagation());
                 delB.addEventListener("mousedown", (e) => e.stopPropagation());
                 swapB.addEventListener("click", () => {
@@ -1257,25 +1298,24 @@
                 card._strip = strip;
                 card._slLayer = slLayer;
 
-                // restore existing slashes (migrate older stroke-based saves to the tapered shape)
+                // restore existing slashes; regenerate anything from an older
+                // geometry version (keeps position, re-rolls the shape/angle)
                 (c.slashes || []).forEach((sd, idx) => {
-                    if (sd && !sd.thick) {
-                        const len = sd.w
-                            ? Math.max(60, (sd.w - 16) / 1.45)
-                            : 120;
-                        const g = makeSlash(len);
+                    if (sd && sd.v !== SLASH_V) {
+                        const g = makeSlash(slashLen(c.h || 360));
                         sd = Object.assign({}, sd, {
+                            v: SLASH_V,
                             thick: g.thick,
                             hair: g.hair,
                             w: g.w,
                             h: g.h,
+                            rot: slashRot(),
                         });
                         delete sd.d;
                         delete sd.cd;
                         if (sd.left == null)
-                            sd.left = (strip.clientWidth || 60) / 2;
+                            sd.left = (strip.clientWidth || 78) / 2;
                         if (sd.top == null) sd.top = (c.h || 360) * 0.5;
-                        if (sd.rot == null) sd.rot = rnd(-20, 20);
                         if (sd.seed == null)
                             sd.seed = Math.floor(rnd(1, 999999));
                         c.slashes[idx] = sd;
@@ -1366,20 +1406,28 @@
                 const strip = card._strip,
                     slLayer = card._slLayer;
                 const r = strip.getBoundingClientRect();
-                // horizontal cut that spans the strip and overhangs its edges
-                const len = Math.max(
-                    70,
-                    Math.min(230, r.width * rnd(1.5, 2.3)),
-                );
+                // steep cut sized to the strip; soft-clamp the click point so the
+                // solid body always crosses the paper instead of hanging in space
+                const len = slashLen(r.height);
                 const g = makeSlash(len);
+                const vext = len * 0.42; // ~vertical half-extent of the body
                 const data = {
+                    v: SLASH_V,
                     thick: g.thick,
                     hair: g.hair,
                     w: g.w,
                     h: g.h,
-                    left: e.clientX - r.left,
-                    top: e.clientY - r.top,
-                    rot: rnd(-20, 20),
+                    left: clamp(
+                        e.clientX - r.left,
+                        r.width * 0.22,
+                        r.width * 0.78,
+                    ),
+                    top: clamp(
+                        e.clientY - r.top,
+                        vext * 0.75,
+                        r.height - vext * 0.75,
+                    ),
+                    rot: slashRot(),
                     seed: Math.floor(rnd(1, 999999)),
                 };
                 c.slashes = c.slashes || [];
@@ -1403,6 +1451,13 @@
                 c.slashes.pop();
                 const last = live[live.length - 1];
                 last.classList.add("dying");
+                // un-cut: the wipe retreats back up the stroke the way it came
+                last.style.clipPath = "inset(-90% -8% -90% -8%)";
+                last.getBoundingClientRect();
+                last.style.transition =
+                    "clip-path .18s cubic-bezier(.55,0,.8,.4), opacity .18s ease";
+                last.style.clipPath = "inset(-90% -8% -90% 102%)";
+                last.style.opacity = "0.3";
                 setTimeout(() => last.remove(), 200);
                 if (card._countEl) card._countEl.textContent = c.slashes.length;
                 updateResolveState(card);
