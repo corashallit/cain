@@ -7,10 +7,14 @@
 # Ignore everything at the root by default...
 /*
 
-# ...but keep the code files and this ignore list.
+# ...but keep the code files, the docs, and this ignore list.
 !.gitignore
 !talismans.html
 !open-talismans.command
+!open-talismans.bat
+!README.md
+!LICENSE
+!demo.gif
 
 # ...and the image folders the board draws from. A parent dir must be
 # un-ignored before anything inside it can be, hence the two-step.
