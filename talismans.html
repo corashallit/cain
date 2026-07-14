@@ -1849,11 +1849,10 @@
                 fsvg.setAttribute("height", "0");
                 fsvg.style.cssText = "position:absolute;width:0;height:0;";
                 fsvg.innerHTML = `<defs><filter id="${fid}" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB">
-      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="${Math.floor(rnd(1, 9999))}" result="n"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.027 0.072" numOctaves="2" seed="${Math.floor(rnd(1, 9999))}" result="n"/>
       <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/>
     </filter></defs>`;
                 document.body.appendChild(fsvg);
-                const turb = fsvg.querySelector("feTurbulence");
                 const disp = fsvg.querySelector("feDisplacementMap");
 
                 const wrap = document.createElement("div");
@@ -1944,13 +1943,16 @@
                     const t = (now - start) / 1000;
                     // bottom-up consumption
                     paper.style.setProperty("--burn", (-16 + p * 140).toFixed(1) + "%");
-                    // heat-warp that crawls and intensifies as it burns
-                    disp.setAttribute("scale", (5 + p * p * 38).toFixed(1));
-                    turb.setAttribute(
-                        "baseFrequency",
-                        (0.012 + p * 0.022).toFixed(3) +
-                            " " +
-                            (0.02 + p * 0.075).toFixed(3),
+                    // heat-warp that crawls and intensifies as it burns; only
+                    // the (cheap) displacement scale animates — the noise field
+                    // itself must stay static
+                    disp.setAttribute(
+                        "scale",
+                        (
+                            5 +
+                            p * p * 38 +
+                            Math.sin(t * 27 + ph1) * 4 * p
+                        ).toFixed(1),
                     );
                     // violent flutter/curl of the shrinking remnant
                     const flx = Math.sin(t * 33 + ph1) * 8 * p + Math.sin(t * 12) * 5;
