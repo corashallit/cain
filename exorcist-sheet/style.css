@@ -53,10 +53,10 @@ body { margin:0; padding:34px 0 60px; font-family:var(--f-type); color:var(--ink
 .dotrow[data-xs] .dot { position:absolute; top:0; }
 .dot:hover, .tick:hover { box-shadow:0 0 0 3px rgba(200,26,16,.14); }
 
-/* sin boxes: filled keeps a white rim so it reads against the black ink around it;
-   a crossed-out box (right-click) gets a red X and can't be filled */
-.sindot { z-index:2; }
-.sindot.on { background:#fff; }
+/* sin boxes: always a white disc drawn over the printed one, so the white around a
+   filled box is the same as around an empty one; a crossed-out box (right-click)
+   gets a red X and can't be filled */
+.sindot, .sindot.on { z-index:2; background:#fff; }
 .sindot.on::after { content:""; position:absolute; inset:13%; border-radius:50%; background:#141414; }
 .sindot.crossed { cursor:default; }
 .sindot.crossed::after { content:none; }
