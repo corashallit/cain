@@ -255,6 +255,8 @@
 
     document.querySelectorAll(".ac[data-ac]").forEach((el) => {
       const list = el.dataset.ac === "blasphemy" ? BLASPHEMIES : AGENDAS;
+      // names, not words: a spellcheck squiggle would also show through the title art
+      el.spellcheck = false;
       const applyStyle = () => {
         const t = el.textContent.trim().toUpperCase();
         el.classList.remove("ac-art");
