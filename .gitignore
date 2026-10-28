@@ -1,5 +1,5 @@
 # This repo tracks the code files plus the image assets the talisman board
-# uses (reference/{talismans,details,backgrounds}). The CAIN rulebook
+# uses (reference/{talismans,details,backgrounds}), and the exorcist sheet. The CAIN rulebook
 # PDFs/plaintext, the generated notes, and the rest of the reference material
 # are deliberately left untracked (large, mostly third-party material).
 # Whitelist approach: ignore everything, then re-include what we keep.
@@ -15,6 +15,9 @@
 !README.md
 !LICENSE
 !demo.gif
+
+# ...the exorcist sheet (self-contained static page: code, art, fonts).
+!/exorcist-sheet/
 
 # ...and the image folders the board draws from. A parent dir must be
 # un-ignored before anything inside it can be, hence the two-step.

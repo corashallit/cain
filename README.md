@@ -42,6 +42,10 @@ This live discovery is why the launchers run a tiny web server: the page reads t
 
 CAIN is by [Tom Bloom](https://tombloom.itch.io/cain). The art on this board comes from the CAIN books — original work alongside collage, background, and texture pieces built from public-use photos sourced from Wikimedia Commons — and is included here with Tom Bloom's kind permission. This is an unofficial, fan-made play aid, not affiliated with or endorsed by him. If it sees use at your table, go buy CAIN.
 
+## Exorcist sheet
+
+`exorcist-sheet/` is a separate, self-contained character sheet (open its `index.html`; it autosaves to localStorage too). A hosted copy runs at [cora.earth/games/cain/exorcist-sheet](https://cora.earth/games/cain/exorcist-sheet/).
+
 ## License
 
-The code (`talismans.html` and the launchers) is under the [MIT License](LICENSE). The images — everything under `reference/`, plus the demo GIF — are **not** covered by it: that art belongs to Tom Bloom and appears here with his permission, so don't redistribute it outside this play aid.
+The code (`talismans.html`, the launchers, and the exorcist sheet's HTML/JS/CSS) is under the [MIT License](LICENSE). The images — everything under `reference/` and `exorcist-sheet/assets/art/`, plus the demo GIF — are **not** covered by it: that art belongs to Tom Bloom and appears here with his permission, so don't redistribute it outside this play aid.
