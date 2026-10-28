@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>CAIN — Talismans</title>
+        <title>CAIN Talismans</title>
         <!-- Fonts: Source Sans 3 ≈ Acumin Pro (body), Grenze Gotisch ≈ Cuasigothic (details/numbers) -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -909,10 +909,10 @@
                     resize · Hover a strip for <b>swap art / delete</b>.
                     <div class="credit">
                         CAIN is by Tom Bloom. The art on this board comes
-                        from the CAIN books — original work alongside
+                        from the CAIN books: original work alongside
                         collage, background, and texture pieces built from
                         public-use photos sourced from Wikimedia Commons.
-                        This is an unofficial, fan-made play aid — not
+                        This is an unofficial, fan-made play aid, not
                         affiliated with or endorsed by him.
                     </div>
                 </div>
@@ -1128,7 +1128,7 @@
                     if (!saveUserBgs()) {
                         userBgs.pop();
                         alert(
-                            "No room left in this browser's storage — right-click an uploaded background to remove it, then try again.",
+                            "No room left in this browser's storage. Right-click an uploaded background to remove it, then try again.",
                         );
                         return;
                     }
@@ -2068,7 +2068,7 @@
                     t.src = b.data;
                     t.dataset.src = "user:" + b.id;
                     t.alt = "";
-                    t.title = "your upload — right-click to remove";
+                    t.title = "your upload (right-click to remove)";
                     t.addEventListener("click", () =>
                         setBackground("user:" + b.id),
                     );

@@ -1,13 +1,11 @@
 /* ===== CAIN exorcist sheet — shared tokens & components (integrator-owned) ===== */
 @font-face { font-family:'Courier Prime'; src:url('assets/fonts/courier-prime-latin-400-normal.woff2') format('woff2'); font-weight:400; }
 @font-face { font-family:'Courier Prime'; src:url('assets/fonts/courier-prime-latin-700-normal.woff2') format('woff2'); font-weight:700; }
-@font-face { font-family:'Pirata One'; src:url('assets/fonts/pirata-one-latin-400-normal.woff2') format('woff2'); }
 @font-face { font-family:'Permanent Marker'; src:url('assets/fonts/permanent-marker-latin-400-normal.woff2') format('woff2'); }
 @font-face { font-family:'Special Elite'; src:url('assets/fonts/special-elite-latin-400-normal.woff2') format('woff2'); }
 
 :root {
   --f-type:'Courier Prime', 'Courier New', monospace;
-  --f-black:'Pirata One', serif;
   --f-brush:'Permanent Marker', cursive;
   --f-hand:'Special Elite', 'Courier Prime', monospace;
   --ink:#1a1a1a;
@@ -34,9 +32,10 @@ body { margin:0; padding:34px 0 60px; font-family:var(--f-type); color:var(--ink
 .ce { font-family:var(--f-hand); color:var(--hand-ink); outline:none; cursor:text;
       background:transparent; min-height:1em; }
 .ce.line { display:inline-block; white-space:nowrap; overflow:hidden; }
-.ce.area { display:block; white-space:pre-wrap; overflow:auto; line-height:1.45; }
-.ce:hover, .ac[data-ac]:hover { background:rgba(120,90,20,.055); }
-.ce:focus, .ac[data-ac]:focus { background:rgba(120,90,20,.09); box-shadow:0 0 0 1px rgba(120,90,20,.18); }
+.ce.area { display:block; white-space:pre-wrap; overflow:auto; line-height:1.45; border-radius:12px;
+          overflow-wrap:anywhere; scrollbar-width:thin; }
+.ce:hover, .ac[data-ac]:hover { background-color:rgba(120,90,20,.055); }
+.ce:focus, .ac[data-ac]:focus { background-color:rgba(120,90,20,.09); box-shadow:0 0 0 1px rgba(120,90,20,.18); }
 .ce:empty:not(:focus)::before { content:attr(data-ph); color:rgba(0,0,0,.22);
       font-family:var(--f-hand); }
 
@@ -48,7 +47,6 @@ body { margin:0; padding:34px 0 60px; font-family:var(--f-type); color:var(--ink
 .tick { border-radius:2px; }
 .dot.bare, .tick.bare { border-color:transparent; }   /* for circles baked into bg art */
 .dot.dashed { border-style:dashed; }
-.dot .fill, .tick .fill { position:absolute; inset:-24%; pointer-events:none; }
 .dotrow { display:flex; gap:7px; align-items:center; }
 /* rows with data-xs: each dot sits on its own printed circle (app.js sets left) */
 .dotrow[data-xs] { display:block; left:0; width:0; height:var(--dot); }
@@ -83,7 +81,12 @@ body { margin:0; padding:34px 0 60px; font-family:var(--f-type); color:var(--ink
 .cat-hot { cursor:pointer; position:absolute; }
 .cat-hot:hover { background:rgba(184,22,12,.07); border-radius:8px; }
 #idcat { font-family:var(--f-brush); color:#b8160c; display:flex; align-items:center;
-  justify-content:center; pointer-events:none; }
+  justify-content:center; border-radius:50%; cursor:pointer; }
+#idcat:hover { background:rgba(184,22,12,.07); }
+#idcat:focus-within { box-shadow:0 0 0 2px rgba(184,22,12,.35); }
+/* the native select sits invisibly over the circle, so a click opens the drop-down */
+#idcat-pick { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer;
+  font-family:var(--f-type); font-size:14px; }
 
 /* autocomplete chip + name styling */
 #ac-chip { display:none; position:absolute; z-index:70; background:#1d1d1d; color:#eee;
@@ -92,46 +95,9 @@ body { margin:0; padding:34px 0 60px; font-family:var(--f-type); color:var(--ink
 #ac-chip b { letter-spacing:.06em; }
 #ac-chip span { color:#888; margin-left:8px; font-size:10px; }
 
-.ac.ac-styled { letter-spacing:.02em; }
-/* blasphemies — blackletter, book ink colors (sampled from CAIN_1.4.pdf pp. 28–39).
-   font/color/background carry !important: the host fields set these via ID-scoped rules
-   (#page3 .ac) that would otherwise always win on specificity. Fields with .ac-plain
-   (the page-1 ID card) never receive these classes — app.js skips them. */
-.st-tension,.st-ardence,.st-flux,.st-vector,.st-gate,.st-smother,.st-whisper,.st-bind,
-.st-palace,.st-jaunt,.st-sympathy,
-.st-tongue,.st-track,.st-wire,.st-mother { font-family:var(--f-black) !important; font-weight:400; }
-.st-tension  { color:#f01a0c !important; }
-.st-ardence  { color:#fff !important; background:#e8180c !important; padding:0 7px; border-radius:2px; }
-.st-flux     { color:rgba(120,0,0,.12) !important; -webkit-text-stroke:1.3px #d40000; }
-.st-vector   { color:#f59300 !important; }
-.st-gate     { color:#fff !important; background:#f59300 !important; padding:0 7px; border-radius:2px; }
-.st-smother  { color:#f59300 !important; }
-.st-whisper  { color:#0f7bf5 !important; }
-.st-edit     { font-family:var(--f-type) !important; font-weight:700; letter-spacing:.3em;
-               background:#eceae3 !important; color:#161616 !important; padding:0 7px;
-               box-shadow:1px 2px 3px rgba(0,0,0,.28); }
-.st-bind     { color:#0f7bf5 !important; }
-.st-palace   { color:#9a05f5 !important; }
-.st-jaunt    { color:#fff !important; background:#c01ef0 !important; padding:0 7px; border-radius:2px;
-               text-shadow:0 0 2px #000, 1.5px 1.5px 0 #000; }
-.st-sympathy { color:#9a05f5 !important; }
-/* GFF issue 3.1 blasphemies (colors sampled from pp. 32–39 title art) */
-.st-tongue   { color:#f00500 !important; text-shadow:2px 2px 0 #8c0000; }
-.st-track    { color:#f09018 !important;
-               text-shadow:-1.3px -1.3px 0 #452c00, 1.3px -1.3px 0 #452c00,
-                           -1.3px 1.3px 0 #452c00, 1.6px 1.6px 0 #452c00; }
-.st-wire     { color:#0048a8 !important; text-shadow:1.5px 1.5px 0 #002a66; }
-.st-mother   { color:#7a06ee !important; text-shadow:2px 2px 0 #43007e; }
-/* agendas — brush lettering (Odachi in the book) */
-.st-beast,.st-doomed,.st-guardian,.st-firebug,.st-loner,.st-hardline,.st-machine,.st-torch,
-.st-moth,.st-temperance,.st-shadow,.st-sorcerer,.st-songbird,.st-demon,
-.st-doll,.st-cradle,.st-broken {
-  font-family:var(--f-brush) !important; color:#181512 !important; letter-spacing:.01em; }
-.st-sorcerer { color:#d633ff !important; }
-/* GFF issue 3.1 agendas: DOLL is hot pink with a white sticker outline; CRADLE/BROKEN are stock brush */
-.st-doll     { color:#d94fc5 !important;
-               text-shadow:-1.5px -1.5px 0 #fff, 1.5px -1.5px 0 #fff,
-                           -1.5px 1.5px 0 #fff, 1.5px 1.5px 0 #fff; }
+.ac.ac-art:not(:focus) { color:transparent !important; background-image:var(--art); background-position:left center;
+  background-size:contain; background-repeat:no-repeat;
+  background-origin:content-box; }
 
 /* execution talisman + slashes (adapted from talismans.html).
    The whole horizontal paper strip (#exec-hit) is the talisman: click anywhere on it to

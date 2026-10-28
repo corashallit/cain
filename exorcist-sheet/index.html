@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=900">
-<title>CAIN — Registered Exorcist</title>
+<title>CAIN Registered Exorcist</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -24,6 +24,7 @@
     .dotrow              data-count dots; data-xs lists each dot's centre x on the sheet,
                          the row's top is the dots' top. The value is the filled count.
     .sindot              sin boxes; right-click crosses one out for good
+    .ac art              a known agenda / blasphemy shows its title art from the books
   Every key is unchanged from the first version of the sheet, so saves carry over.
 -->
 <style>
@@ -32,12 +33,13 @@
   #page1 .cf.ac { font-size:13px; line-height:14px; height:14px; }
   #page1 #idphoto { left:78px; top:86px; width:145px; height:181px; }
   #page1 #idcat   { left:378px; top:90px; width:65px; height:65px; font-size:34px; }
+  #page1 #idcat-mark { pointer-events:none; }
   #page1 #exec-hit { left:22px; top:334px; width:441px; height:47px; }
   #page1 #exec-talisman { left:83px; top:341px; width:26px; height:25px; }
   #page1 .inj { --dot:25px; top:462.5px; }
   #page1 .hookname { font-size:11px; line-height:13px; height:14px; top:581px; }
   #page1 .htick { position:absolute; }
-  #page1 #afflictions { left:90px; top:782px; width:346px; height:212px; font-size:14px; }
+  #page1 #afflictions { left:96px; top:786px; width:334px; height:204px; font-size:14px; padding:2px 6px; }
   #page1 .sk { --dot:19px; }
   #page1 .pathos { --dot:18px; }
   #page1 .adv { --dot:20.5px; }
@@ -59,17 +61,17 @@
   /* ---------- page 3 ---------- */
   #page3 .ac { position:absolute; font-family:var(--f-hand); color:var(--hand-ink); outline:none;
         cursor:text; white-space:nowrap; overflow:hidden; display:flex; align-items:center; }
-  #page3 #f-agenda    { left:216px; top:84px;  width:216px; height:43px; font-size:20px; }
-  #page3 #f-blasphemy { left:278px; top:388px; width:262px; height:57px; font-size:24px; }
-  #page3 .box { font-size:15px; }
-  #page3 #b-items     { left:68px;  top:202px; width:310px; height:154px; }
-  #page3 #b-abilities { left:442px; top:142px; width:344px; height:202px; }
-  #page3 #b-passive   { left:62px;  top:526px; width:222px; height:94px; }
-  #page3 #b-p1 { left:443px; top:478px; width:325px; height:140px; }
-  #page3 #b-p2 { left:62px;  top:656px; width:325px; height:160px; }
-  #page3 #b-p3 { left:441px; top:655px; width:325px; height:160px; }
-  #page3 #b-p4 { left:65px;  top:859px; width:325px; height:160px; }
-  #page3 #b-p5 { left:444px; top:858px; width:325px; height:160px; }
+  #page3 #f-agenda    { left:212px; top:82px;  width:224px; height:47px; font-size:20px; padding:2px 8px; }
+  #page3 #f-blasphemy { left:274px; top:387px; width:268px; height:60px; font-size:24px; padding:5px 10px; }
+  #page3 .box { font-size:15px; padding:2px 6px; }
+  #page3 #b-items     { left:74px;  top:206px; width:298px; height:144px; }
+  #page3 #b-abilities { left:446px; top:150px; width:326px; height:192px; }
+  #page3 #b-passive   { left:66px;  top:530px; width:216px; height:86px; }
+  #page3 #b-p1 { left:447px; top:481px; width:316px; height:130px; }
+  #page3 #b-p2 { left:66px;  top:660px; width:316px; height:150px; }
+  #page3 #b-p3 { left:445px; top:659px; width:316px; height:150px; }
+  #page3 #b-p4 { left:69px;  top:863px; width:316px; height:150px; }
+  #page3 #b-p5 { left:448px; top:862px; width:316px; height:150px; }
   #page3 .tcell { position:absolute; top:584.3px; height:35px; }
 
   /* ---------- page 4 (CAT reference; the chosen CAT's column is outlined) ---------- */
@@ -214,8 +216,8 @@ MATCHBOOK (20 MATCHES), CLEAN HANDKERCHIEF (1 KP)"></div>
 </section>
 
 <div id="site-footer">
-  Fan-made interactive exorcist sheet — not official. CAIN is by Tom Bloom; sheet art from CAINsheets 1.4.5.<br>
-  Everything autosaves in this browser. EXPORT for a portable backup.<br>
+  Fan-made interactive exorcist sheet, not official. CAIN is by Tom Bloom; sheet art from CAINsheets 1.4.5.<br>
+  Everything autosaves in this browser. EXPORT for a portable backup. PRINT to export pages.<br>
   Right-click a sin box to cross it out for good. Right-click the execution strip to undo a slash.
 </div>
 

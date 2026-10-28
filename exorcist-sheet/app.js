@@ -32,39 +32,45 @@
     return () => ((s = Math.imul(48271, s) % 2147483647) / 2147483647);
   }
 
-  /* ---------------- fills (dots fill solid black via CSS .on; ticks get an X) ---------------- */
-  function xFill(key) {
-    const r = rngFor(key);
-    const j = () => r() * 14 - 7;
-    return `<svg class="fill" viewBox="0 0 100 100" preserveAspectRatio="none">
-      <path d="M ${12 + j()} ${14 + j()} L ${88 + j()} ${86 + j()}" stroke="#b8160c" stroke-width="11" stroke-linecap="round" opacity=".85"/>
-      <path d="M ${86 + j()} ${16 + j()} L ${14 + j()} ${84 + j()}" stroke="#b8160c" stroke-width="10" stroke-linecap="round" opacity=".8"/>
-    </svg>`;
+  /* ---------------- fills ----------------
+     Dots fill solid black via CSS .on. Ticks (hooks, passive) get one carved slash, the
+     same red slash as the execution strip; a crossed-out sin box gets two. Slashes are
+     seeded by key, so each keeps its shape across reloads. */
+  function carve(el, key, rots, anim) {
+    const w = el.offsetWidth, h = el.offsetHeight, r = rngFor(key);
+    const len = Math.hypot(w, h) * 0.8;
+    rots.forEach((rot, i) => {
+      const core = makeSlash(len, r);
+      const data = { ...core, left: w / 2, top: h / 2, rot: rot + (r() * 10 - 5), seed: hash(key) + i };
+      el.appendChild(buildSlash(data, anim, false));
+    });
   }
 
   /* ---------------- dots & ticks ---------------- */
-  function renderToggle(el) {
+  function renderToggle(el, anim) {
     const k = el.dataset.key;
     const on = !!get(k);
     el.classList.toggle("on", on);
-    el.innerHTML = on && el.classList.contains("tick") ? xFill(k) : "";
+    el.innerHTML = "";
+    if (on && el.classList.contains("tick")) carve(el, k, [48], anim);
   }
   function initToggles(root) {
     root.querySelectorAll(".dot[data-key], .tick[data-key]").forEach((el) => {
       renderToggle(el);
       el.addEventListener("click", () => {
         if (el.classList.contains("crossed")) return;
-        set(el.dataset.key, !get(el.dataset.key)); renderToggle(el);
+        set(el.dataset.key, !get(el.dataset.key)); renderToggle(el, true);
       });
     });
   }
 
   /* sin boxes: right-click crosses one out for good (sin overflow, a new blasphemy);
      right-click again to undo a mistake. Stored beside the box as <key>.x */
-  function renderSin(el) {
+  function renderSin(el, anim) {
     const x = !!get(el.dataset.key + ".x");
     el.classList.toggle("crossed", x);
-    el.innerHTML = x ? xFill(el.dataset.key + ".x") : "";
+    el.innerHTML = "";
+    if (x) carve(el, el.dataset.key + ".x", [45, 135], anim);
   }
   function initSins(root) {
     root.querySelectorAll(".sindot[data-key]").forEach((el) => {
@@ -74,7 +80,7 @@
         e.preventDefault();
         const k = el.dataset.key + ".x";
         set(k, !get(k));
-        renderSin(el);
+        renderSin(el, true);
       });
     });
   }
@@ -154,8 +160,10 @@
     let sel = null;
     hots.forEach((h) => { if (+h.dataset.cat === v) sel = h; });
     drawCatRing(sel);
-    const idcat = document.getElementById("idcat");
-    if (idcat) idcat.textContent = ROMAN[v] || "";
+    const mark = document.getElementById("idcat-mark");
+    if (mark) mark.textContent = ROMAN[v] || "";
+    const pick = document.getElementById("idcat-pick");
+    if (pick) pick.value = String(v);
     // page 4's chart: columns are CAT 0..VII, 85px wide, CAT 0's left edge at x 125.8
     const col = document.getElementById("cat-col");
     if (col) {
@@ -164,6 +172,13 @@
     }
   }
   function initCat() {
+    // the ID card's CATEGORY RATING SYSTEM circle is a drop-down for the same x.cat
+    const idcat = document.getElementById("idcat");
+    if (idcat) {
+      idcat.innerHTML = `<span id="idcat-mark"></span><select id="idcat-pick" title="Category rating" aria-label="Category rating">
+        ${ROMAN.map((n, i) => `<option value="${i}">${i ? "CAT " + n : "No CAT yet"}</option>`).join("")}</select>`;
+      idcat.querySelector("select").addEventListener("change", (e) => { set("x.cat", +e.target.value); renderCat(); });
+    }
     document.querySelectorAll(".cat-hot").forEach((h) => {
       h.addEventListener("click", () => {
         set("x.cat", +get("x.cat") === +h.dataset.cat ? 0 : +h.dataset.cat);
@@ -218,7 +233,9 @@
     "TONGUE","TRACK","WIRE","MOTHER"];                               // GFF issue 3.1
   const AGENDAS = ["BEAST","DOOMED","GUARDIAN","FIREBUG","LONER","HARDLINE","MACHINE","TORCH","MOTH","TEMPERANCE","SHADOW","SORCERER","SONGBIRD","DEMON",
     "DOLL","CRADLE","BROKEN"];                                       // GFF issue 3.1
-  const NAME_CLASS = (name) => "st-" + name.toLowerCase();
+  // each known name shows its title art from the book (assets/names/, cut from CAIN 1.4.5
+  // and Games for Freaks 3.1.5) while the field isn't being edited
+  const ART = (name) => `url("assets/names/${name.toLowerCase()}.webp")`;
 
   function initAutocomplete() {
     const chip = document.createElement("div");
@@ -229,16 +246,17 @@
 
     document.querySelectorAll(".ac[data-ac]").forEach((el) => {
       const list = el.dataset.ac === "blasphemy" ? BLASPHEMIES : AGENDAS;
-      const allClasses = list.map(NAME_CLASS);
       const applyStyle = () => {
         const t = el.textContent.trim().toUpperCase();
-        el.classList.remove("ac-styled", ...allClasses);
+        el.classList.remove("ac-art");
         const hit = list.find((n) => n === t);
         if (hit) {
           if (el.textContent.trim() !== hit) el.textContent = hit;
-          // .ac-plain (ID-card fields): autocomplete only — the st-* display faces are
-          // unreadable at card size, so keep the plain hand ink there
-          if (!el.classList.contains("ac-plain")) el.classList.add("ac-styled", NAME_CLASS(hit));
+          // .ac-plain (ID-card fields): autocomplete only, the art is too small to read there
+          if (!el.classList.contains("ac-plain")) {
+            el.classList.add("ac-art");
+            el.style.setProperty("--art", ART(hit));
+          }
           if (el.dataset.key) set(el.dataset.key, hit);
         }
       };
@@ -254,7 +272,7 @@
         }
       };
       el.addEventListener("input", () => {
-        el.classList.remove("ac-styled", ...allClasses);
+        el.classList.remove("ac-art");
         const q = el.textContent.trim().toUpperCase();
         const m = q.length >= 2 ? list.filter((n) => n.startsWith(q) && n !== q) : [];
         if (m.length === 1) {
@@ -330,14 +348,15 @@
   }
   const rnd = (a, b) => a + Math.random() * (b - a);
   const REDS = ["#e60a02", "#ff2a16", "#d40600", "#f5160a", "#c50400"];
-  function makeSlash(len) {
+  function makeSlash(len, rand = Math.random) {
+    const rnd = (a, b) => a + rand() * (b - a);
     const H = 46, cy = H / 2;
     const hairLen = len * rnd(1.3, 1.55);
     const w = Math.ceil(hairLen) + 24, cx = w / 2;
     const phase = rnd(-0.5, 0.5), drift = rnd(-1.6, 1.6), amp = rnd(0.9, 2.0);
     const baseOff = rnd(-1.2, 1.2);
     const thick = [], hair = [];
-    const nThick = 1 + (Math.random() < 0.35 ? 1 : 0);
+    const nThick = 1 + (rand() < 0.35 ? 1 : 0);
     for (let k = 0; k < nThick; k++) {
       const L = len * rnd(0.8, 0.97);
       thick.push({
@@ -355,7 +374,7 @@
     });
     return { thick, hair, w, h: H };
   }
-  function buildSlash(data, anim) {
+  function buildSlash(data, anim, textured = true) {
     const { thick, hair, w, h, left, top, rot, seed } = data;
     const NS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(NS, "svg");
@@ -367,7 +386,11 @@
     const v = (seed || 0) % FILTER_VARIANTS;
     const tp = (thick || []).map((s) => `<path d="${s.d}" fill="${s.fill}" fill-opacity="${s.opacity}"/>`).join("");
     const hp = (hair || []).map((s) => `<path d="${s.d}" fill="${s.fill}" fill-opacity="${s.opacity}"/>`).join("");
-    svg.innerHTML = `<g filter="url(#sltex${v})">${tp}</g><g filter="url(#slsharp${v})">${hp}</g>`;
+    // the paper-grain filters are sized for long talisman slashes; on a small box they'd
+    // eat most of the stroke, so short slashes draw plain
+    svg.innerHTML = textured
+      ? `<g filter="url(#sltex${v})">${tp}</g><g filter="url(#slsharp${v})">${hp}</g>`
+      : `<g>${tp}</g><g>${hp}</g>`;
     if (anim) {
       svg.style.clipPath = "inset(-90% 102% -90% -8%)";
       svg.classList.add("fresh");
@@ -431,8 +454,10 @@
     bar.innerHTML = `
       <button id="tb-export" title="Download this exorcist as a JSON file">EXPORT</button>
       <button id="tb-import" title="Load an exorcist from a JSON file">IMPORT</button>
+      <button id="tb-print"  title="Print the sheet, or save it as a PDF">PRINT</button>
       <button id="tb-clear"  title="Wipe the sheet">CLEAR</button>`;
     document.body.appendChild(bar);
+    document.getElementById("tb-print").addEventListener("click", () => window.print());
     document.getElementById("tb-export").addEventListener("click", () => {
       const name = (get("p1.name") || "exorcist").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "exorcist";
       const blob = new Blob([JSON.stringify(state, null, 1)], { type: "application/json" });
