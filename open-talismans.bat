@@ -2,8 +2,9 @@
 setlocal
 REM Double-click this file to run the CAIN talisman board through a small local
 REM web server. Serving it (instead of opening the .html directly) lets the page
-REM read the reference\ folders live -- drop new images into reference\details or
-REM reference\backgrounds, then just refresh the page to see them.
+REM pick up new art -- drop new images into reference\details or
+REM reference\backgrounds, then just refresh the page to see them (the server
+REM rewrites reference\manifest.json each time the page loads; make-manifest.py).
 REM
 REM Leave this window open while you use the board. Close it (or press Ctrl-C)
 REM to stop the server.
@@ -36,4 +37,4 @@ echo.
 REM open the page once the server has had a moment to start
 start "" /min powershell -NoProfile -WindowStyle Hidden -Command "Start-Sleep 1; Start-Process '%URL%'"
 
-%PYCMD% -m http.server %PORT%
+%PYCMD% make-manifest.py --serve %PORT%
