@@ -15,6 +15,7 @@
 !README.md
 !LICENSE
 !demo.gif
+!make-manifest.py
 
 # ...the exorcist sheet (self-contained static page: code, art, fonts).
 !/exorcist-sheet/
@@ -26,5 +27,6 @@
 !/reference/talismans/
 !/reference/details/
 !/reference/backgrounds/
+!/reference/manifest.json
 
 .DS_Store

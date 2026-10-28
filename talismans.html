@@ -922,10 +922,10 @@
         <script>
             const ROOT = "reference/";
             // These curated lists are the fallback used when the page is opened
-            // as a plain file:// document (browsers block folder listing there).
-            // Served through the launcher's local web server, loadFolders() below
-            // replaces them with a live read of the folders, so images you drop
-            // into reference/{talismans,details,backgrounds} show up on refresh.
+            // as a plain file:// document (browsers block fetch() there). Served
+            // over http, loadFolders() below replaces them with the lists in
+            // reference/manifest.json, which make-manifest.py writes from the
+            // contents of reference/{talismans,details,backgrounds}.
             let TALISMANS = [
                 "CAIN_1.4-0471-p079.png",
                 "CAIN_1.4-0505-p081.png",
@@ -973,63 +973,51 @@
                 "gamesforfreaks_issue3.1-0218-p023.png",
             ].map((f) => ROOT + "backgrounds/" + f);
 
-            /* ---------- live folder loading (served over http) ----------
-               When the page is opened through the local server, the browser
-               can fetch a directory and get an auto-generated index listing.
-               We parse the <a href> links, keep the images, and use them in
-               place of the curated arrays. On file:// the fetch throws and we
-               silently keep the fallback lists, so double-clicking still works. */
+            /* ---------- art lists from the manifest (served over http) ----------
+               reference/manifest.json lists the image files in each folder
+               ({"talismans": [...], "details": [...], "backgrounds": [...]}).
+               On file:// the fetch throws and we silently keep the fallback
+               lists, so double-clicking still works. */
             const IMG_RE = /\.(png|jpe?g|gif|webp|svg|avif|bmp)$/i;
             // files living in a folder that should NOT be offered as choices
+            // (make-manifest.py leaves them out too)
             const FOLDER_EXCLUDE = {
                 talismans: new Set(["slashes.png"]), // the reference image, not a strip
             };
-            async function listDir(sub) {
+            async function loadManifest() {
                 try {
-                    const res = await fetch(ROOT + sub + "/", {
+                    const res = await fetch(ROOT + "manifest.json", {
                         cache: "no-store",
                     });
                     if (!res.ok) return null;
-                    if (!/html/i.test(res.headers.get("content-type") || ""))
-                        return null;
-                    const doc = new DOMParser().parseFromString(
-                        await res.text(),
-                        "text/html",
-                    );
-                    const ex = FOLDER_EXCLUDE[sub] || new Set();
-                    const names = Array.from(doc.querySelectorAll("a[href]"))
-                        .map((a) => a.getAttribute("href") || "")
-                        .filter(
-                            (h) =>
-                                h &&
-                                !h.startsWith("?") &&
-                                !h.startsWith("/") &&
-                                !h.includes("../"),
-                        )
-                        // Caddy prefixes listing entries with "./"; strip it so
-                        // hrefs are bare filenames like python -m http.server's.
-                        .map((h) => h.replace(/\/+$/, "").replace(/^\.\//, ""))
-                        .filter((h) => IMG_RE.test(h))
-                        .filter(
-                            (h) =>
-                                !ex.has(decodeURIComponent(h).split("/").pop()),
-                        );
-                    const uniq = Array.from(new Set(names)).sort((a, b) =>
-                        a.toLowerCase().localeCompare(b.toLowerCase()),
-                    );
-                    return uniq.length
-                        ? uniq.map((h) => ROOT + sub + "/" + h)
-                        : null;
+                    return await res.json();
                 } catch (e) {
-                    return null; // file:// or no listing available -> use fallback
+                    return null; // file:// or no manifest -> use fallback
                 }
             }
+            function listDir(manifest, sub) {
+                const files = manifest && manifest[sub];
+                if (!Array.isArray(files)) return null;
+                const ex = FOLDER_EXCLUDE[sub] || new Set();
+                const names = files.filter(
+                    (h) =>
+                        typeof h === "string" &&
+                        !h.includes("/") &&
+                        IMG_RE.test(h) &&
+                        !ex.has(h),
+                );
+                const uniq = Array.from(new Set(names)).sort((a, b) =>
+                    a.toLowerCase().localeCompare(b.toLowerCase()),
+                );
+                return uniq.length
+                    ? uniq.map((h) => ROOT + sub + "/" + encodeURIComponent(h))
+                    : null;
+            }
             async function loadFolders() {
-                const [tal, det, bg] = await Promise.all([
-                    listDir("talismans"),
-                    listDir("details"),
-                    listDir("backgrounds"),
-                ]);
+                const manifest = await loadManifest();
+                const tal = listDir(manifest, "talismans");
+                const det = listDir(manifest, "details");
+                const bg = listDir(manifest, "backgrounds");
                 if (tal) TALISMANS = tal;
                 if (det) DETAILS = det;
                 if (bg) BACKGROUNDS = bg;

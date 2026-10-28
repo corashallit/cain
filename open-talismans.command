@@ -1,8 +1,9 @@
 #!/bin/bash
 # Double-click this file to run the CAIN talismans board through a small local
 # web server. Serving it (instead of opening the .html directly) lets the page
-# read the reference/ folders live -- drop new images into reference/details or
-# reference/backgrounds, then just refresh the page to see them.
+# pick up new art -- drop new images into reference/details or
+# reference/backgrounds, then just refresh the page to see them (the server
+# rewrites reference/manifest.json each time the page loads; make-manifest.py).
 #
 # Leave this Terminal window open while you use the board. Press Ctrl-C (or close
 # the window) to stop the server.
@@ -28,4 +29,4 @@ echo
 # open the page once the server has had a moment to start
 ( sleep 1; open "$URL" ) &
 
-exec "$PY" -m http.server "$PORT"
+exec "$PY" make-manifest.py --serve "$PORT"

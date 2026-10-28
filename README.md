@@ -12,11 +12,11 @@ To run it yourself: the board is a single HTML file plus art folders — no buil
 
 - **macOS** — double-click `open-talismans.command`. If Gatekeeper objects the first time, right-click it and choose *Open* (or run `bash open-talismans.command` from Terminal).
 - **Windows** — double-click `open-talismans.bat`. If a Microsoft Store window opens instead of the board, install Python from [python.org](https://www.python.org/downloads/) and re-run it.
-- **Anywhere** — from this folder, run `python3 -m http.server 8137`, then open <http://localhost:8137/talismans.html>.
+- **Anywhere** — from this folder, run `python3 make-manifest.py --serve 8137`, then open <http://localhost:8137/talismans.html>.
 
 Either launcher opens the board in your browser and keeps a small local server running — leave its window open while you play, close it (or press Ctrl-C) when you're done.
 
-You can also open `talismans.html` straight from the file system, without any server. Everything works except live discovery of new art files (see below) — the board falls back to its built-in art list.
+You can also open `talismans.html` straight from the file system, without any server. Everything works except picking up new art files (see below) — the board falls back to its built-in art list.
 
 ## Using the board
 
@@ -36,7 +36,7 @@ Drop images into these folders and refresh the page:
 - `reference/backgrounds/` — full-screen backdrops
 - `reference/details/` — corner decoration art
 
-This live discovery is why the launchers run a tiny web server: the page reads those folders through the server's directory listing. Any static file server with directory listings enabled works the same way.
+The board finds the art through `reference/manifest.json`, a list of the image files in each folder. The launchers' server rewrites it every time the page loads, so new images show up on a refresh. Served any other way (another static file server, or the hosted copy), run `python3 make-manifest.py` after adding or removing art so the manifest matches the folders, and commit it along with the images; `python3 make-manifest.py --check` says whether it's up to date.
 
 ## Credits
 
