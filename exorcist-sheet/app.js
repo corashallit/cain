@@ -144,14 +144,23 @@
     const r = rngFor("cat" + hot.dataset.cat);
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("class", "cat-ring");
-    svg.setAttribute("viewBox", "0 0 100 100");
-    svg.setAttribute("preserveAspectRatio", "none");
-    svg.style.cssText = "position:absolute;inset:-16% -14%;pointer-events:none;overflow:visible;";
-    const wob = () => (r() * 8 - 4).toFixed(1);
-    svg.innerHTML = `<ellipse cx="${50 + +wob()}" cy="${50 + +wob()}" rx="${45 + r() * 4}" ry="${40 + r() * 5}"
-      fill="none" stroke="#b8160c" stroke-width="4.5" opacity=".9"
-      transform="rotate(${(r() * 14 - 7).toFixed(1)} 50 50)"
-      stroke-dasharray="${230 + r() * 40} 400" stroke-linecap="round"/>`;
+    // a pen loop around the triangle: just over one turn, so the ends overlap a little
+    // the way a hand-drawn circle does, with a slight wobble and tilt
+    // centred low, near the triangle's centroid, so it takes in the corners and the number
+    const w = hot.offsetWidth, h = hot.offsetHeight, cx = w / 2, cy = h * 0.6;
+    const rx = w * 0.68, ry = h * 0.68, tilt = (r() * 10 - 5) * Math.PI / 180;
+    const start = -2.2 + r() * 0.5, turn = Math.PI * 2 * (1.08 + r() * 0.05);
+    const ph = r() * 6, pts = [];
+    for (let i = 0; i <= 64; i++) {
+      const t = start + turn * i / 64;
+      const k = 1 + 0.035 * Math.sin(t * 2 + ph) + 0.03 * i / 64;   // wobble, spiral out a touch
+      const x = Math.cos(t) * rx * k, y = Math.sin(t) * ry * k;
+      pts.push(`${(cx + x * Math.cos(tilt) - y * Math.sin(tilt)).toFixed(1)},${(cy + x * Math.sin(tilt) + y * Math.cos(tilt)).toFixed(1)}`);
+    }
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    svg.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;";
+    svg.innerHTML = `<polyline points="${pts.join(" ")}" fill="none" stroke="#b8160c" stroke-width="2.6"
+      stroke-linecap="round" stroke-linejoin="round" opacity=".88"/>`;
     hot.appendChild(svg);
   }
   function renderCat() {
