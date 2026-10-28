@@ -52,7 +52,30 @@
   function initToggles(root) {
     root.querySelectorAll(".dot[data-key], .tick[data-key]").forEach((el) => {
       renderToggle(el);
-      el.addEventListener("click", () => { set(el.dataset.key, !get(el.dataset.key)); renderToggle(el); });
+      el.addEventListener("click", () => {
+        if (el.classList.contains("crossed")) return;
+        set(el.dataset.key, !get(el.dataset.key)); renderToggle(el);
+      });
+    });
+  }
+
+  /* sin boxes: right-click crosses one out for good (sin overflow, a new blasphemy);
+     right-click again to undo a mistake. Stored beside the box as <key>.x */
+  function renderSin(el) {
+    const x = !!get(el.dataset.key + ".x");
+    el.classList.toggle("crossed", x);
+    el.innerHTML = x ? xFill(el.dataset.key + ".x") : "";
+  }
+  function initSins(root) {
+    root.querySelectorAll(".sindot[data-key]").forEach((el) => {
+      el.title = "Click to fill · right-click to cross out for good";
+      renderSin(el);
+      el.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        const k = el.dataset.key + ".x";
+        set(k, !get(k));
+        renderSin(el);
+      });
     });
   }
 
@@ -62,11 +85,14 @@
       const k = row.dataset.key, n = +row.dataset.count;
       const dashedFrom = row.dataset.dashedFrom ? +row.dataset.dashedFrom : Infinity;
       const bare = row.classList.contains("baredots");
+      // data-xs: each dot's centre x on the sheet, so dots land on irregularly spaced print
+      const xs = row.dataset.xs ? row.dataset.xs.split(",").map(Number) : null;
       row.innerHTML = "";
       const dots = [];
       for (let i = 0; i < n; i++) {
         const d = document.createElement("span");
         d.className = "dot" + (i + 1 >= dashedFrom ? " dashed" : "") + (bare ? " bare" : "");
+        if (xs) d.style.left = `calc(${xs[i]}px - var(--dot) / 2)`;
         row.appendChild(d);
         dots.push(d);
       }
@@ -130,6 +156,12 @@
     drawCatRing(sel);
     const idcat = document.getElementById("idcat");
     if (idcat) idcat.textContent = ROMAN[v] || "";
+    // page 4's chart: columns are CAT 0..VII, 85px wide, CAT 0's left edge at x 125.8
+    const col = document.getElementById("cat-col");
+    if (col) {
+      col.style.display = v ? "block" : "none";
+      col.style.left = 125.8 + 85 * v + "px";
+    }
   }
   function initCat() {
     document.querySelectorAll(".cat-hot").forEach((h) => {
@@ -437,6 +469,7 @@
     if (document.getElementById("toolbar")) return; // idempotent boot
     initEditables(document);
     initToggles(document);
+    initSins(document);
     initDotrows(document);
     initCat();
     initPhoto();

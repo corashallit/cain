@@ -46,6 +46,8 @@ CAIN is by [Tom Bloom](https://tombloom.itch.io/cain). The art on this board com
 
 `exorcist-sheet/` is a separate, self-contained character sheet (open its `index.html`; it autosaves to localStorage too). A hosted copy runs at [cora.earth/games/cain/exorcist-sheet](https://cora.earth/games/cain/exorcist-sheet/).
 
+Its printed pages are full-page renders of the official CAIN sheets PDF (version 1.4.5), with the fillable fields, dots and checkboxes laid over them. To move to a new version of the sheets, run `python3 render-sheet-pages.py path/to/CAINsheets.pdf` (needs `pip install pypdfium2 pillow`), then check the overlays still line up with the new art.
+
 ## License
 
 The code (`talismans.html`, the launchers, and the exorcist sheet's HTML/JS/CSS) is under the [MIT License](LICENSE). The images — everything under `reference/` and `exorcist-sheet/assets/art/`, plus the demo GIF — are **not** covered by it: that art belongs to Tom Bloom and appears here with his permission, so don't redistribute it outside this play aid.

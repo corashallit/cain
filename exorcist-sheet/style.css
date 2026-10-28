@@ -1,33 +1,22 @@
 /* ===== CAIN exorcist sheet — shared tokens & components (integrator-owned) ===== */
 @font-face { font-family:'Courier Prime'; src:url('assets/fonts/courier-prime-latin-400-normal.woff2') format('woff2'); font-weight:400; }
 @font-face { font-family:'Courier Prime'; src:url('assets/fonts/courier-prime-latin-700-normal.woff2') format('woff2'); font-weight:700; }
-@font-face { font-family:'Inter'; src:url('assets/fonts/inter-latin-400-normal.woff2') format('woff2'); font-weight:400; }
-@font-face { font-family:'Inter'; src:url('assets/fonts/inter-latin-700-normal.woff2') format('woff2'); font-weight:700; }
-@font-face { font-family:'Archivo Black'; src:url('assets/fonts/archivo-black-latin-400-normal.woff2') format('woff2'); }
-@font-face { font-family:'Anton'; src:url('assets/fonts/anton-latin-400-normal.woff2') format('woff2'); }
-@font-face { font-family:'Oswald'; src:url('assets/fonts/oswald-latin-400-normal.woff2') format('woff2'); font-weight:400; }
-@font-face { font-family:'Oswald'; src:url('assets/fonts/oswald-latin-700-normal.woff2') format('woff2'); font-weight:700; }
 @font-face { font-family:'Pirata One'; src:url('assets/fonts/pirata-one-latin-400-normal.woff2') format('woff2'); }
 @font-face { font-family:'Permanent Marker'; src:url('assets/fonts/permanent-marker-latin-400-normal.woff2') format('woff2'); }
 @font-face { font-family:'Special Elite'; src:url('assets/fonts/special-elite-latin-400-normal.woff2') format('woff2'); }
 
 :root {
   --f-type:'Courier Prime', 'Courier New', monospace;
-  --f-body:'Inter', 'Helvetica Neue', sans-serif;
-  --f-disp:'Archivo Black', sans-serif;
-  --f-anton:'Anton', sans-serif;
   --f-black:'Pirata One', serif;
   --f-brush:'Permanent Marker', cursive;
   --f-hand:'Special Elite', 'Courier Prime', monospace;
   --ink:#1a1a1a;
-  --ink-soft:#555;
   --hand-ink:#26241f;      /* user-entered text */
   --dot:17px;
-  --red:#c81a10;
 }
 
 html { background:#141414; }
-body { margin:0; padding:34px 0 60px; font-family:var(--f-body); color:var(--ink);
+body { margin:0; padding:34px 0 60px; font-family:var(--f-type); color:var(--ink);
        display:flex; flex-direction:column; align-items:center; gap:42px; }
 
 .sheet { width:850px; height:1100px; position:relative; background:#fdfdfc;
@@ -37,6 +26,9 @@ body { margin:0; padding:34px 0 60px; font-family:var(--f-body); color:var(--ink
 .sheet * { box-sizing:border-box; }
 .sheet img { user-select:none; -webkit-user-drag:none; pointer-events:none; }
 /* decorative art must never intercept clicks meant for the widgets under/over it */
+/* the printed page: one render of the official sheet, under every overlay */
+.sheet .page-art { position:absolute; left:0; top:0; width:100%; height:100%; }
+.sheet .a { position:absolute; }
 
 /* ---- editable fields ---- */
 .ce { font-family:var(--f-hand); color:var(--hand-ink); outline:none; cursor:text;
@@ -58,13 +50,18 @@ body { margin:0; padding:34px 0 60px; font-family:var(--f-body); color:var(--ink
 .dot.dashed { border-style:dashed; }
 .dot .fill, .tick .fill { position:absolute; inset:-24%; pointer-events:none; }
 .dotrow { display:flex; gap:7px; align-items:center; }
+/* rows with data-xs: each dot sits on its own printed circle (app.js sets left) */
+.dotrow[data-xs] { display:block; left:0; width:0; height:var(--dot); }
+.dotrow[data-xs] .dot { position:absolute; top:0; }
 .dot:hover, .tick:hover { box-shadow:0 0 0 3px rgba(200,26,16,.14); }
 
-/* ---- shared page furniture ---- */
-.blend-m { mix-blend-mode:multiply; }
-.rotcw { writing-mode:vertical-rl; }
-.rotccw { writing-mode:vertical-rl; transform:rotate(180deg); }
-.smallcaps-note { font-family:var(--f-type); font-size:9px; color:#7a7a7a; letter-spacing:.04em; }
+/* sin boxes: filled keeps a white rim so it reads against the black ink around it;
+   a crossed-out box (right-click) gets a red X and can't be filled */
+.sindot { z-index:2; }
+.sindot.on { background:#fff; }
+.sindot.on::after { content:""; position:absolute; inset:13%; border-radius:50%; background:#141414; }
+.sindot.crossed { cursor:default; }
+.sindot.crossed::after { content:none; }
 
 /* ===== integrator widgets (appended after shared.css) ===== */
 
