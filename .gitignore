@@ -16,6 +16,7 @@
 !LICENSE
 !demo.gif
 !make-manifest.py
+!render-sheet-pages.py
 
 # ...the exorcist sheet (self-contained static page: code, art, fonts).
 !/exorcist-sheet/

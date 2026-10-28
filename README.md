@@ -40,12 +40,14 @@ The board finds the art through `reference/manifest.json`, a list of the image f
 
 ## Credits
 
-CAIN is by [Tom Bloom](https://tombloom.itch.io/cain). The art on this board comes from the CAIN books — original work alongside collage, background, and texture pieces built from public-use photos sourced from Wikimedia Commons — and is included here with Tom Bloom's kind permission. This is an unofficial, fan-made play aid, not affiliated with or endorsed by him. If it sees use at your table, go buy CAIN.
+CAIN is by [Tom Bloom](https://tombloom.itch.io/cain). The art on this board comes from the CAIN books: original work alongside collage, background, and texture pieces built from public-use photos sourced from Wikimedia Commons — and is included here with Tom Bloom's kind permission. This is an unofficial, fan-made play aid, not affiliated with or endorsed by him. If it sees use at your table, go buy CAIN.
 
 ## Exorcist sheet
 
 `exorcist-sheet/` is a separate, self-contained character sheet (open its `index.html`; it autosaves to localStorage too). A hosted copy runs at [cora.earth/games/cain/exorcist-sheet](https://cora.earth/games/cain/exorcist-sheet/).
 
+Its printed pages are full-page renders of the official CAIN sheets PDF (version 1.4.5), with the fillable fields, dots and checkboxes laid over them. To move to a new version of the sheets, run `python3 render-sheet-pages.py path/to/CAINsheets.pdf` (needs `pip install pypdfium2 pillow`), then check the overlays still line up with the new art.
+
 ## License
 
-The code (`talismans.html`, the launchers, and the exorcist sheet's HTML/JS/CSS) is under the [MIT License](LICENSE). The images — everything under `reference/` and `exorcist-sheet/assets/art/`, plus the demo GIF — are **not** covered by it: that art belongs to Tom Bloom and appears here with his permission, so don't redistribute it outside this play aid.
+The code (`talismans.html`, the launchers, and the exorcist sheet's HTML/JS/CSS) is under the [MIT License](LICENSE). The images — everything under `reference/`, `exorcist-sheet/assets/art/` and `exorcist-sheet/assets/names/`, plus the demo GIF — are **not** covered by it: that art belongs to Tom Bloom and appears here with his permission, so don't redistribute it outside this play aid.

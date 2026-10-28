@@ -3,908 +3,222 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=900">
-<title>CAIN — Registered Exorcist</title>
+<title>CAIN Registered Exorcist</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <!--
-  CAIN interactive exorcist sheet — PAGE 1 (#page1)
-  Coordinate system: 850x1100 CSS px. All positions measured from sheet-1.png (1700x2200) / 2.
+  CAIN interactive exorcist sheet, built on CAINsheets_1.4.5.pdf.
 
-  INTEGRATOR WIRING NOTES
-  -----------------------
-  Editable text: every <span class="ce line" data-key="p1.*"> and <div class="ce area"> gets
-    contenteditable + persistence via your app.js (data-key convention). The AGND / BLSPH fields
-    also carry class "ac" + data-ac="agenda|blasphemy" for your autocomplete, plus "ac-plain":
-    autocomplete only, no st-* display faces (unreadable at card size — keep plain hand ink).
-  Toggle circles/ticks: <span class="dot" data-key> and <span class="tick" data-key> — fill on click.
-  Progress rows: <div class="dotrow" data-key data-count [data-dashed-from]> — you generate the circles.
-    Per-row --dot and gap are set inline so the generated circles land on the printed spots.
-  INTEGRATOR-OWNED EMPTY CONTAINERS (I only positioned them, geometry measured from ref):
-    #idphoto      — photo-upload zone over the ID-card framed logo box.
-    #idcat        — shows the chosen CAT roman numeral over the CATEGORY RATING SYSTEM circle.
-    #exec-talisman— the execution slash-circle widget over the printed circle in the EXECUTION bar.
-  Data-keys used (page 1):
-    p1.name p1.xid p1.agnd p1.blsph p1.sx p1.ht p1.wt p1.hair p1.eyes p1.cid
-    p1.inj.1 p1.inj.2 p1.inj.3 p1.inj.visit
-    p1.hook.{1..3}.name  p1.hook.{1..3}.t{1..3}
-    p1.afflictions
-    p1.sk.force p1.sk.conditioning p1.sk.coordination p1.sk.covert p1.sk.interfacing
-    p1.sk.investigation p1.sk.surveillance p1.sk.negotiation p1.sk.authority p1.sk.connection
-    p1.improve  p1.pathos  p1.xp  p1.adv
-    (shared widgets used elsewhere: none on this page)
+  Each page's printed art is one full-page render (assets/art/page-N.webp, made by
+  ../render-sheet-pages.py), so nothing on the official sheet is cropped or retyped.
+  Everything below the art is an interactive overlay, positioned in CSS px on the
+  850x1100 sheet (PDF points x 850/612). Positions were measured from the PDF's own
+  object bounds and from the renders; after rendering a new PDF version, screenshot
+  the sheet and re-measure anything that moved.
 
-  DEVIATIONS FROM BRIEF
-  ---------------------
-  1. ADVANCEMENT panel: brief says "white Courier on #3f3f3f (dark)". The reference sheet-1.png
-     actually renders it as a LIGHT-GREY panel (region median 176, 92% light pixels) with DARK
-     text. I matched the reference (grey panel, dark text). Flip .adv-panel bg to #3f3f3f + text
-     to #eee if the dark treatment was intentional.
-  2. Pathos: emitted as a single <div class="dotrow" data-key="p1.pathos" data-count="3"> laid
-     horizontally over the star cluster (the printed 3 stars are triangular, not a row).
-  3. AAM corner glyph drawn in CSS (diamond + down-triangle) — icon-eye-diamond.png is an
-     eye-in-diamond, which does not match the printed spinner glyph.
-  4. AAM / DIVINE AGONY / ADVANCEMENT panel backgrounds drawn as CSS grey rounded rects (tones
-     sampled from ref: 197 / 212 / 176) rather than panel-taped-paper.png, for clean corners and
-     correct per-panel tone; a faint tex-plastic-wrap sheen overlay is layered for the crinkle.
+  Conventions (app.js owns all behaviour):
+    .ce.line / .ce.area  contenteditable text, saved under data-key
+    .ac[data-ac]         agenda / blasphemy names with autocomplete
+    .dot / .tick         toggles (dot fills black, tick gets a red X)
+    .dotrow              data-count dots; data-xs lists each dot's centre x on the sheet,
+                         the row's top is the dots' top. The value is the filled count.
+    .sindot              sin boxes; right-click crosses one out for good
+    .ac art              a known agenda / blasphemy shows its title art from the books
+  Every key is unchanged from the first version of the sheet, so saves carry over.
 -->
 <style>
-  #page1 { font-family: var(--f-body); color: var(--ink); }
-  #page1 .a { position: absolute; }
-  #page1 img.art { position: absolute; }
-
-  /* ---------- ID CARD ---------- */
-  #page1 .affix { left:50px; top:28px; font-family:var(--f-body); font-weight:700;
-                  font-size:13px; letter-spacing:.08em; color:#b3b3b3; }
-  #page1 .card-img { left:44px; top:50px; width:428px; height:263px; }
-  #page1 #idphoto { left:81px; top:82px; width:139px; height:182px; }
-  #page1 #idcat   { left:370px; top:89px; width:65px; height:65px; }
-  #page1 .cf { position:absolute; font-family:var(--f-hand); color:var(--hand-ink);
-               font-size:15px; white-space:nowrap; overflow:hidden; }
-  #page1 .cf.ac { font-size:14px; }
-
-  /* ---------- EXECUTION BAR ---------- */
-  #page1 .exec-paper { left:21px; top:334px; width:460px; height:46px; }
-  #page1 .exec-word  { left:267px; top:330px; width:198px; }
-  #page1 #exec-hit { left:24px; top:336px; width:454px; height:42px; }
-  #page1 #exec-talisman { left:84px; top:341px; width:32px; height:32px; border:1.8px solid #6a6a6a; border-radius:50%; }
-  #page1 .exec-cap { left:124px; top:364px; font-family:var(--f-black);
-                     font-size:11px; color:#5a5a5a; letter-spacing:.02em; }
-
-  /* ---------- HEALTH FORM (left) ---------- */
-  #page1 .health-paper { left:20px; top:402px; width:463px; height:682px; }
-  #page1 .lighthead { position:absolute; font-family:var(--f-body); font-weight:400;
-                      opacity:.9; letter-spacing:.01em; color:#6f6f6f; font-size:33px;
-                      line-height:1; }
-  #page1 .cap { position:absolute; font-family:var(--f-body); font-size:9px; color:#6c6c6c;
-                line-height:1.22; }
-  /* injuries pill + dots */
-  #page1 .inj-pill { left:254px; top:436px; width:168px; height:74px;
-                     border:1.5px solid #4a4a4a; border-radius:11px; }
-  #page1 .inj-skull { left:359px; top:431px; width:62px; height:82px; opacity:.5;
-                      mix-blend-mode:multiply; }
-  #page1 .inj-dot { --dot:38px; }
-  #page1 .vis-dot { --dot:34px; }
-  /* hooks */
-  #page1 .instr { position:absolute; left:115px; top:625px; font-family:var(--f-body);
-                  font-size:9px; color:#6b6b6b; line-height:1.1; }
-  #page1 .instr b { font-weight:700; color:#5c5c5c; }
-  #page1 .instr .ig { margin-bottom:3px; }
-  #page1 .hookname { position:absolute; height:14px; font-size:11px;
-                     border-bottom:1.4px dashed #6a6a6a; }
-  #page1 .hookbox { position:absolute; border:1.5px solid #565656; border-radius:5px; }
-  #page1 .hookdiv { position:absolute; border-top:1.4px solid #565656; }
+  /* ---------- page 1 ---------- */
+  #page1 .cf { font-size:15px; line-height:16px; height:17px; }
+  #page1 .cf.ac { font-size:13px; line-height:14px; height:14px; }
+  #page1 #idphoto { left:78px; top:86px; width:145px; height:181px; }
+  #page1 #idcat   { left:378px; top:90px; width:65px; height:65px; font-size:34px; }
+  #page1 #idcat-mark { pointer-events:none; }
+  #page1 #exec-hit { left:22px; top:334px; width:441px; height:47px; }
+  #page1 #exec-talisman { left:83px; top:341px; width:26px; height:25px; }
+  #page1 .inj { --dot:25px; top:462.5px; }
+  #page1 .hookname { font-size:11px; line-height:13px; height:14px; top:581px; }
   #page1 .htick { position:absolute; }
-  /* afflictions */
-  #page1 .affl-area { left:78px; top:778px; width:368px; height:224px;
-                      border:1.6px solid #7d7d7d; border-radius:24px; padding:12px 16px;
-                      font-size:14px; }
+  #page1 #afflictions { left:96px; top:786px; width:334px; height:204px; font-size:14px; padding:2px 6px; }
+  #page1 .sk { --dot:19px; }
+  #page1 .pathos { --dot:18px; }
+  #page1 .adv { --dot:20.5px; }
 
-  /* ---------- SKILLS PANEL (right) ---------- */
-  #page1 .skills-paper { left:492px; top:43px; width:333px; height:517px; }
-  #page1 .skill { position:absolute; left:521px; font-family:var(--f-type); font-weight:700;
-                  font-size:17px; color:#1f1f1f; letter-spacing:.005em; line-height:1; }
-  #page1 .sk-sep { position:absolute; left:520px; width:306px; height:0;
-                   border-top:1.3px dashed #a2a2a2; }
-  #page1 .sk-vrule { position:absolute; left:699px; top:90px; height:307px; width:0;
-                     border-left:1.4px dashed #9c9c9c; }
-  #page1 .sk-dots { --dot:18px; }
-  #page1 .skills-note { position:absolute; left:530px; font-family:var(--f-type);
-                        font-size:9.5px; color:#333; line-height:1.3; }
-  #page1 .improve-lbl { position:absolute; left:528px; top:435px; font-family:var(--f-type);
-                        font-size:15px; color:#5a5a5a; letter-spacing:.02em; }
-  #page1 .improve-dots { --dot:19px; }
+  /* ---------- page 2 ---------- */
+  #page2 .cat-hot { top:42px; width:62px; height:56px; }
+  #page2 #psyche-dots { --dot:46px; top:141.5px; }
+  #page2 #burst-dots  { --dot:25px; top:165.5px; }
+  #page2 .sindot { --dot:21.5px; }
+  #page2 #kp-dots { --dot:20px; top:299.7px; }
+  #page2 #kit-list { left:80px; top:390px; width:338px; height:424px; font-size:13px; line-height:1.5; }
+  #page2 #scrip { left:226px; top:843px; width:190px; font-size:20px; line-height:22px; height:23px;
+        border-bottom:1.5px solid rgba(60,60,56,.28); }
+  #page2 .mark { font-size:15px; padding:12px 16px 22px; }
+  #page2 #mark-worm { left:467px; top:728px; width:361px; height:158px; border-radius:22px; }
+  #page2 #mark-bee  { left:44px;  top:934px; width:391px; height:158px; border-radius:22px; }
+  #page2 #mark-fly  { left:448px; top:925px; width:361px; height:158px; border-radius:22px; }
 
-  /* ---------- shared taped panels ---------- */
-  #page1 .tpanel { position:absolute; border-radius:15px; overflow:hidden;
-                   box-shadow:2px 3px 7px rgba(0,0,0,.22); }
-  #page1 .tpanel .sheen { position:absolute; inset:0; width:100%; height:100%;
-                          object-fit:cover; opacity:.18; mix-blend-mode:overlay;
-                          pointer-events:none; }
-  #page1 .tpanel .pc { position:absolute; }
+  /* ---------- page 3 ---------- */
+  #page3 .ac { position:absolute; font-family:var(--f-hand); color:var(--hand-ink); outline:none;
+        cursor:text; white-space:nowrap; overflow:hidden; display:flex; align-items:center; }
+  #page3 #f-agenda    { left:212px; top:82px;  width:224px; height:47px; font-size:20px; padding:2px 8px; }
+  #page3 #f-blasphemy { left:274px; top:387px; width:268px; height:60px; font-size:24px; padding:5px 10px; }
+  #page3 .box { font-size:15px; padding:2px 6px; }
+  #page3 #b-items     { left:74px;  top:206px; width:298px; height:144px; }
+  #page3 #b-abilities { left:446px; top:150px; width:326px; height:192px; }
+  #page3 #b-passive   { left:66px;  top:530px; width:216px; height:86px; }
+  #page3 #b-p1 { left:447px; top:481px; width:316px; height:130px; }
+  #page3 #b-p2 { left:66px;  top:660px; width:316px; height:150px; }
+  #page3 #b-p3 { left:445px; top:659px; width:316px; height:150px; }
+  #page3 #b-p4 { left:69px;  top:863px; width:316px; height:150px; }
+  #page3 #b-p5 { left:448px; top:862px; width:316px; height:150px; }
+  #page3 .tcell { position:absolute; top:584.3px; height:35px; }
 
-  /* ACTION ASSESSMENT METRIC */
-  #page1 .aam-panel { left:500px; top:539px; width:305px; height:183px; background:#c8c8c6; }
-  #page1 .aam-glyph { left:545px; top:548px; width:16px; height:24px; }
-  #page1 .aam-glyph .dia { position:absolute; left:1px; top:0; width:12px; height:12px;
-                           border:1.5px solid #6f6f6f; transform:rotate(45deg); }
-  #page1 .aam-glyph .tri { position:absolute; left:2px; top:14px; width:0; height:0;
-                           border-left:5px solid transparent; border-right:5px solid transparent;
-                           border-top:8px solid #6f6f6f; }
-  #page1 .aam-head { left:575px; top:551px; font-family:var(--f-type); font-size:12px;
-                     letter-spacing:.06em; color:#787878; font-weight:700; }
-  #page1 .aam-box { position:absolute; top:575px; height:33px; border:1.6px dashed #6b6b6b;
-                    border-radius:9px; text-align:center; }
-  #page1 .aam-box .top { font-family:var(--f-body); font-weight:700; font-size:11.5px;
-                         color:#3d3d3d; line-height:1.05; margin-top:2px; }
-  #page1 .aam-box .big { font-family:var(--f-body); font-weight:700; font-size:12.5px;
-                         color:#9a9a9a; line-height:1; }
-  #page1 .aam-box .sub { font-family:var(--f-body); font-size:7.5px; color:#6d6d6d;
-                         line-height:1.1; }
-  #page1 .aam-list { left:537px; top:617px; font-family:var(--f-body); font-size:10px;
-                     color:#3f3f3f; line-height:1.4; }
-  #page1 .aam-list b { font-weight:700; color:#2c2c2c; }
-  #page1 .aam-list .hd { font-weight:700; color:#2c2c2c; font-size:11px; }
-  #page1 .aam-max { left:505px; top:708px; width:295px; text-align:right; font-family:var(--f-body);
-                    font-weight:700; font-size:11px; color:#2f2f2f; }
-
-  /* DIVINE AGONY */
-  #page1 .agony-panel { left:500px; top:731px; width:300px; height:131px; background:#d4d4d2; }
-  #page1 .agony-dagger { left:521px; top:747px; height:106px; }
-  #page1 .agony-word { left:558px; top:742px; width:152px; }
-  #page1 .agony-list { left:558px; top:768px; width:157px; font-family:var(--f-body);
-                       font-style:italic; font-size:8px; color:#2f2f2f; line-height:1.22; z-index:2; }
-  #page1 .agony-list .bl { position:relative; padding-left:9px; margin-bottom:4px; }
-  #page1 .agony-list .bl::before { content:"•"; position:absolute; left:0; top:0; }
-  #page1 .agony-stars { left:713px; top:745px; width:86px; opacity:.6; z-index:1; }
-  #page1 .agony-pathos-dots { --dot:13px; }
-  #page1 .agony-pathos-lbl { left:731px; top:822px; font-family:var(--f-body); font-style:italic;
-                             font-size:16px; color:#6f6f6f; letter-spacing:.02em; z-index:3; }
-  #page1 .agony-clear { left:726px; top:848px; font-family:var(--f-body); font-style:italic;
-                        font-size:8px; color:#6f6f6f; z-index:3; }
-
-  /* ADVANCEMENT (ref shows LIGHT-grey panel + dark text; see deviation note) */
-  #page1 .adv-panel { left:492px; top:871px; width:330px; height:209px; background:#b2b2b0; }
-  #page1 .adv-head { left:500px; top:879px; font-family:var(--f-type); font-weight:700;
-                     font-size:15px; color:#3a3a3a; letter-spacing:.01em; }
-  #page1 .adv-tm { left:632px; top:882px; font-family:var(--f-type); font-size:10px;
-                   color:#8f8f8f; letter-spacing:.03em; }
-  #page1 .adv-xp  { left:500px; top:900px; font-family:var(--f-type); font-weight:700;
-                    font-size:28px; color:#333; }
-  #page1 .adv-advl{ left:500px; top:925px; font-family:var(--f-type); font-weight:700;
-                    font-size:28px; color:#333; }
-  #page1 .adv-xp-dots  { --dot:24px; }
-  #page1 .adv-adv-dots { --dot:24px; }
-  #page1 .adv-body { left:500px; top:952px; width:310px; font-family:var(--f-type);
-                     font-size:10px; color:#333; line-height:1.35; }
-  #page1 .adv-q { position:absolute; left:505px; font-family:var(--f-type); font-size:10px;
-                  color:#333; line-height:1; }
-  #page1 .adv-q b { font-weight:700; }
-  #page1 .foot { position:absolute; right:35px; font-family:var(--f-type); font-size:10px;
-                 color:#c4c4c4; letter-spacing:.02em; text-align:right; }
-
-  /* pathos dots must paint & click above the stars art (z1) */
-  #page1 .dot[data-key^="p1.pathos"] { z-index:2; }
-  /* static print never intercepts clicks */
-  #page1 .affix, #page1 .cap, #page1 .lighthead, #page1 .instr, #page1 .exec-cap,
-  #page1 .skill, #page1 .sk-sep, #page1 .sk-vrule, #page1 .skills-note, #page1 .improve-lbl,
-  #page1 .aam-glyph, #page1 .aam-head, #page1 .aam-box, #page1 .aam-list, #page1 .aam-max,
-  #page1 .agony-list, #page1 .agony-pathos-lbl, #page1 .agony-clear,
-  #page1 .adv-head, #page1 .adv-tm, #page1 .adv-xp, #page1 .adv-advl, #page1 .adv-body,
-  #page1 .adv-q, #page1 .foot, #page1 .inj-pill, #page1 .hookbox, #page1 .hookdiv
-  { pointer-events:none; }
+  /* ---------- page 4 (CAT reference; the chosen CAT's column is outlined) ---------- */
+  #page4 #cat-col { top:145px; width:85px; height:681px; display:none; pointer-events:none;
+        border:2.5px solid rgba(184,22,12,.8); background:rgba(200,26,16,.06); }
 </style>
 
+<!-- ===================== PAGE 1 ===================== -->
 <section class="sheet" id="page1">
+  <img class="page-art" src="assets/art/page-1.webp" alt="Exorcist sheet page 1: ID card, execution, health evaluation form, skills, action assessment, divine agony, advancement">
 
-  <!-- ===================== ID CARD ===================== -->
-  <div class="affix a">AFFIX ID CARD FIRMLY</div>
-  <img class="art card-img" src="assets/art/card-id.png" alt="Registered Exorcist ID card">
-  <!-- photo zone over framed CAIN-logo box (frame interior orig 162-440 x, 165-528 y) -->
+  <!-- ID card -->
   <div id="idphoto" class="a"></div>
-  <!-- CATEGORY RATING SYSTEM circle: orig center (805,243) r65 -->
   <div id="idcat" class="a"></div>
-  <!-- editable card fields sit on the baked underlines -->
-  <span class="cf ce line" data-key="p1.name"  style="left:246px;top:113px;width:120px"></span>
-  <span class="cf ce line" data-key="p1.xid"   style="left:279px;top:145px;width:74px"></span>
-  <span class="cf ce line ac ac-plain" data-key="p1.agnd" data-ac="agenda"    style="left:293px;top:182px;width:145px"></span>
-  <span class="cf ce line ac ac-plain" data-key="p1.blsph" data-ac="blasphemy" style="left:293px;top:196px;width:145px"></span>
-  <span class="cf ce line" data-key="p1.sx"    style="left:280px;top:216px;width:52px"></span>
-  <span class="cf ce line" data-key="p1.ht"    style="left:280px;top:234px;width:50px"></span>
-  <span class="cf ce line" data-key="p1.wt"    style="left:280px;top:251px;width:120px"></span>
-  <span class="cf ce line" data-key="p1.hair"  style="left:413px;top:216px;width:56px"></span>
-  <span class="cf ce line" data-key="p1.eyes"  style="left:413px;top:234px;width:56px"></span>
-  <span class="cf ce line" data-key="p1.cid"   style="left:258px;top:292px;width:100px"></span>
+  <span class="cf ce line a" data-key="p1.name"  style="left:245px;top:110px;width:122px"></span>
+  <span class="cf ce line a" data-key="p1.xid"   style="left:280px;top:141px;width:78px"></span>
+  <span class="cf ce line ac ac-plain a" data-key="p1.agnd"  data-ac="agenda"    style="left:278px;top:181px;width:120px"></span>
+  <span class="cf ce line ac ac-plain a" data-key="p1.blsph" data-ac="blasphemy" style="left:281px;top:195px;width:117px"></span>
+  <span class="cf ce line a" data-key="p1.sx"    style="left:262px;top:217px;width:84px"></span>
+  <span class="cf ce line a" data-key="p1.ht"    style="left:262px;top:231px;width:84px"></span>
+  <span class="cf ce line a" data-key="p1.wt"    style="left:262px;top:246px;width:96px"></span>
+  <span class="cf ce line a" data-key="p1.hair"  style="left:392px;top:217px;width:74px"></span>
+  <span class="cf ce line a" data-key="p1.eyes"  style="left:392px;top:231px;width:74px"></span>
+  <span class="cf ce line a" data-key="p1.cid"   style="left:252px;top:292px;width:92px"></span>
 
-  <!-- ===================== EXECUTION BAR ===================== -->
-  <img class="art exec-paper" src="assets/art/bar-execution-paper.png" alt="">
-  <img class="art exec-word blend-m" src="assets/art/word-execution.png" alt="EXECUTION">
-  <!-- click anywhere on the strip to carve a slash there; the printed circle (orig center
-       259,700) just displays the running slash count -->
+  <!-- execution: click the strip to carve a slash; the printed circle shows the count -->
   <div id="exec-hit" class="a"></div>
   <div id="exec-talisman" class="a"></div>
-  <div class="exec-cap a">Starts at 6. -1 per injury.</div>
 
-  <!-- ===================== HEALTH EVALUATION FORM ===================== -->
-  <!-- bg bakes: "Health evaluation form" title, "!!BRINK OF DEATH!!" rotated note,
-       CASTLE mark, and the "Report all changes / cursed" fine print -->
-  <img class="art health-paper" src="assets/art/panel-health-paper.png" alt="Health evaluation form">
+  <!-- injuries, then the visitation-rights box -->
+  <span class="dot bare inj a" data-key="p1.inj.1" style="left:253.6px"></span>
+  <span class="dot bare inj a" data-key="p1.inj.2" style="left:315.4px"></span>
+  <span class="dot bare inj a" data-key="p1.inj.3" style="left:377.1px"></span>
+  <span class="dot bare inj a" data-key="p1.inj.visit" style="left:253.6px;top:527.7px"></span>
 
-  <div class="lighthead" style="left:56px;top:443px">INJURIES:</div>
-  <div class="cap" style="left:56px;top:477px;width:230px">Each gives -1 stress.<br>Suffer an injury when execution fills up.<br>Clear all stress when gaining an injury, then<br>remainder rolls over.<br>When suffering instant death, may suffer Sin<br>Overflow instead and erase 1 injury.</div>
+  <!-- hooks: a name over each printed line, three slash cells per box -->
+  <span class="hookname ce line a" data-key="p1.hook.1.name" style="left:246px;width:48px"></span>
+  <span class="hookname ce line a" data-key="p1.hook.2.name" style="left:322px;width:49px"></span>
+  <span class="hookname ce line a" data-key="p1.hook.3.name" style="left:385px;width:55px"></span>
+  <span class="tick bare htick" data-key="p1.hook.1.t1" style="left:253px;top:602.5px;width:36.8px;height:37.7px"></span>
+  <span class="tick bare htick" data-key="p1.hook.1.t2" style="left:253px;top:640.2px;width:36.8px;height:37.3px"></span>
+  <span class="tick bare htick" data-key="p1.hook.1.t3" style="left:253px;top:677.5px;width:36.8px;height:35.2px"></span>
+  <span class="tick bare htick" data-key="p1.hook.2.t1" style="left:326.9px;top:602.5px;width:33.3px;height:37.7px"></span>
+  <span class="tick bare htick" data-key="p1.hook.2.t2" style="left:326.9px;top:640.2px;width:33.3px;height:37.3px"></span>
+  <span class="tick bare htick" data-key="p1.hook.2.t3" style="left:326.9px;top:677.5px;width:33.3px;height:35.2px"></span>
+  <span class="tick bare htick" data-key="p1.hook.3.t1" style="left:397.2px;top:602.5px;width:35.2px;height:37.7px"></span>
+  <span class="tick bare htick" data-key="p1.hook.3.t2" style="left:397.2px;top:640.2px;width:35.2px;height:37.3px"></span>
+  <span class="tick bare htick" data-key="p1.hook.3.t3" style="left:397.2px;top:677.5px;width:35.2px;height:35.2px"></span>
 
-  <!-- injury pill: outline + 3 dots + skull behind dot 3 -->
-  <div class="inj-pill a"></div>
-  <img class="art inj-skull" src="assets/art/art-skull.png" alt="">
-  <span class="dot inj-dot a" data-key="p1.inj.1" style="left:260px;top:453px"></span>
-  <span class="dot inj-dot a" data-key="p1.inj.2" style="left:313px;top:453px"></span>
-  <span class="dot inj-dot a" data-key="p1.inj.3" style="left:371px;top:453px"></span>
+  <div id="afflictions" class="ce area a" data-key="p1.afflictions"></div>
 
-  <!-- visitation injury box -->
-  <span class="dot vis-dot dashed a" data-key="p1.inj.visit" style="left:243px;top:520px"></span>
-  <div class="cap" style="left:285px;top:513px;width:160px">Gain this injury box if<br>visitation rights have been acquired.</div>
+  <!-- registered skills: one row per skill, three dots each -->
+  <div class="dotrow baredots sk a" data-key="p1.sk.force"         data-count="3" data-xs="708.7,739.8,771.2" style="top:87px"></div>
+  <div class="dotrow baredots sk a" data-key="p1.sk.conditioning"  data-count="3" data-xs="708.7,739.8,771.2" style="top:119px"></div>
+  <div class="dotrow baredots sk a" data-key="p1.sk.coordination"  data-count="3" data-xs="708.7,739.8,771.2" style="top:151.2px"></div>
+  <div class="dotrow baredots sk a" data-key="p1.sk.covert"        data-count="3" data-xs="708.7,739.8,771.2" style="top:182.7px"></div>
+  <div class="dotrow baredots sk a" data-key="p1.sk.interfacing"   data-count="3" data-xs="708.7,739.8,771.2" style="top:215.5px"></div>
+  <div class="dotrow baredots sk a" data-key="p1.sk.investigation" data-count="3" data-xs="708.7,739.8,771.2" style="top:247.3px"></div>
+  <div class="dotrow baredots sk a" data-key="p1.sk.surveillance"  data-count="3" data-xs="708.7,739.8,771.2" style="top:281.2px"></div>
+  <div class="dotrow baredots sk a" data-key="p1.sk.negotiation"   data-count="3" data-xs="708.7,739.8,771.2" style="top:313.2px"></div>
+  <div class="dotrow baredots sk a" data-key="p1.sk.authority"     data-count="3" data-xs="708.7,739.8,771.2" style="top:343.5px"></div>
+  <div class="dotrow baredots sk a" data-key="p1.sk.connection"    data-count="3" data-xs="708.7,739.8,771.2" style="top:375.2px"></div>
+  <div class="dotrow baredots sk a" data-key="p1.improve" data-count="6" data-xs="577.6,609.3,640.5,668.9,700.5,731.8" style="top:460.4px"></div>
 
-  <div class="lighthead" style="left:56px;top:543px">HOOKS:</div>
-  <div class="cap" style="left:56px;top:578px;width:190px">Gain hooks when bargaining with the<br>Admin, from your own powers, or when<br>there&rsquo;s a delayed consequence.</div>
+  <!-- pathos: a dot inside each printed star -->
+  <span class="dot bare pathos a" data-key="p1.pathos.1" style="left:746.7px;top:752.2px"></span>
+  <span class="dot bare pathos a" data-key="p1.pathos.2" style="left:726px;top:787.8px"></span>
+  <span class="dot bare pathos a" data-key="p1.pathos.3" style="left:767.7px;top:788px"></span>
 
-  <div class="instr">
-    <div class="ig"><b>INSTRUCTIONS:</b><br>NAME HOOK<br>SLASH HOOK ONCE WHEN:</div>
-    <div class="ig">- Gaining the same hook again<br>- Pressure increases<br>- Rolling a 1 on risk</div>
-    <div class="ig">WHEN HOOK FILLS UP,<br>ERASE AND RESOLVE IT</div>
-  </div>
-
-  <!-- hook column 1 (orig box x506-578) -->
-  <span class="hookname ce line" data-key="p1.hook.1.name" style="left:253px;top:580px;width:44px"></span>
-  <div class="hookbox" style="left:253px;top:597px;width:36px;height:115px"></div>
-  <div class="hookdiv" style="left:253px;top:640px;width:36px"></div>
-  <div class="hookdiv" style="left:253px;top:675px;width:36px"></div>
-  <span class="tick htick bare" data-key="p1.hook.1.t1" style="left:253px;top:597px;width:36px;height:43px"></span>
-  <span class="tick htick bare" data-key="p1.hook.1.t2" style="left:253px;top:640px;width:36px;height:35px"></span>
-  <span class="tick htick bare" data-key="p1.hook.1.t3" style="left:253px;top:675px;width:36px;height:37px"></span>
-
-  <!-- hook column 2 (orig box x654-719) -->
-  <span class="hookname ce line" data-key="p1.hook.2.name" style="left:327px;top:580px;width:44px"></span>
-  <div class="hookbox" style="left:327px;top:597px;width:33px;height:115px"></div>
-  <div class="hookdiv" style="left:327px;top:640px;width:33px"></div>
-  <div class="hookdiv" style="left:327px;top:675px;width:33px"></div>
-  <span class="tick htick bare" data-key="p1.hook.2.t1" style="left:327px;top:597px;width:33px;height:43px"></span>
-  <span class="tick htick bare" data-key="p1.hook.2.t2" style="left:327px;top:640px;width:33px;height:35px"></span>
-  <span class="tick htick bare" data-key="p1.hook.2.t3" style="left:327px;top:675px;width:33px;height:37px"></span>
-
-  <!-- hook column 3 (orig box x795-863) -->
-  <span class="hookname ce line" data-key="p1.hook.3.name" style="left:397px;top:580px;width:44px"></span>
-  <div class="hookbox" style="left:397px;top:597px;width:35px;height:115px"></div>
-  <div class="hookdiv" style="left:397px;top:640px;width:35px"></div>
-  <div class="hookdiv" style="left:397px;top:675px;width:35px"></div>
-  <span class="tick htick bare" data-key="p1.hook.3.t1" style="left:397px;top:597px;width:35px;height:43px"></span>
-  <span class="tick htick bare" data-key="p1.hook.3.t2" style="left:397px;top:640px;width:35px;height:35px"></span>
-  <span class="tick htick bare" data-key="p1.hook.3.t3" style="left:397px;top:675px;width:35px;height:37px"></span>
-
-  <div class="lighthead" style="left:56px;top:716px">AFFLICTIONS:</div>
-  <div class="cap" style="left:56px;top:748px;width:250px">Record afflictions here.<br>Debrief after mission for decontamination.</div>
-  <div class="affl-area ce area a" data-key="p1.afflictions"></div>
-
-  <!-- ===================== REGISTERED SKILLS ===================== -->
-  <!-- bg bakes header "REGISTERED SKILLS" + "TM STANDARD 00398" footer -->
-  <img class="art skills-paper" src="assets/art/panel-skills-paper.png" alt="Registered Skills">
-
-  <div class="sk-vrule"></div>
-
-  <!-- 10 skills: name (top = row-center-16), separator (below), dot row (--dot18) -->
-  <div class="skill" style="top:86px">FORCE</div>
-  <div class="dotrow sk-dots a" data-key="p1.sk.force" data-count="3" style="left:730px;top:86px;gap:14px"></div>
-  <div class="sk-sep" style="top:112px"></div>
-
-  <div class="skill" style="top:118px">CONDITIONING</div>
-  <div class="dotrow sk-dots a" data-key="p1.sk.conditioning" data-count="3" style="left:730px;top:118px;gap:14px"></div>
-  <div class="sk-sep" style="top:144px"></div>
-
-  <div class="skill" style="top:150px">COORDINATION</div>
-  <div class="dotrow sk-dots a" data-key="p1.sk.coordination" data-count="3" style="left:730px;top:150px;gap:14px"></div>
-  <div class="sk-sep" style="top:176px"></div>
-
-  <div class="skill" style="top:182px">COVERT</div>
-  <div class="dotrow sk-dots a" data-key="p1.sk.covert" data-count="3" style="left:730px;top:182px;gap:14px"></div>
-  <div class="sk-sep" style="top:208px"></div>
-
-  <div class="skill" style="top:214px">INTERFACING</div>
-  <div class="dotrow sk-dots a" data-key="p1.sk.interfacing" data-count="3" style="left:730px;top:214px;gap:14px"></div>
-  <div class="sk-sep" style="top:240px"></div>
-
-  <div class="skill" style="top:246px">INVESTIGATION</div>
-  <div class="dotrow sk-dots a" data-key="p1.sk.investigation" data-count="3" style="left:730px;top:246px;gap:14px"></div>
-  <div class="sk-sep" style="top:272px"></div>
-
-  <div class="skill" style="top:278px">SURVEILLANCE</div>
-  <div class="dotrow sk-dots a" data-key="p1.sk.surveillance" data-count="3" style="left:730px;top:278px;gap:14px"></div>
-  <div class="sk-sep" style="top:304px"></div>
-
-  <div class="skill" style="top:310px">NEGOTIATION</div>
-  <div class="dotrow sk-dots a" data-key="p1.sk.negotiation" data-count="3" style="left:730px;top:310px;gap:14px"></div>
-  <div class="sk-sep" style="top:336px"></div>
-
-  <div class="skill" style="top:342px">AUTHORITY</div>
-  <div class="dotrow sk-dots a" data-key="p1.sk.authority" data-count="3" style="left:730px;top:342px;gap:14px"></div>
-  <div class="sk-sep" style="top:367px"></div>
-
-  <div class="skill" style="top:374px">CONNECTION</div>
-  <div class="dotrow sk-dots a" data-key="p1.sk.connection" data-count="3" style="left:730px;top:373px;gap:14px"></div>
-  <div class="sk-sep" style="top:398px"></div>
-
-  <div class="skills-note" style="top:401px">Spend 1 advance to improve, then tick a box below.</div>
-  <div class="skills-note" style="top:414px">Two skills at 3 max.</div>
-  <div class="improve-lbl">Improvements:</div>
-  <div class="dotrow improve-dots a" data-key="p1.improve" data-count="6" style="left:599px;top:463px;gap:11.5px"></div>
-
-  <!-- ===================== ACTION ASSESSMENT METRIC ===================== -->
-  <div class="tpanel aam-panel">
-    <img class="sheen" src="assets/art/tex-plastic-wrap.png" alt="">
-  </div>
-  <div class="aam-glyph a"><span class="dia"></span><span class="tri"></span></div>
-  <div class="aam-head a">ACTION ASSESSMENT METRIC</div>
-  <div class="aam-box a" style="left:538px;width:80px">
-    <div class="top">4+</div><div class="big">SUCCESS</div>
-  </div>
-  <div class="aam-box a" style="left:628px;width:67px">
-    <div class="top">RISKY</div><div class="sub">Admin rolls the<br>risk die.</div>
-  </div>
-  <div class="aam-box a" style="left:704px;width:74px">
-    <div class="top">HARD</div><div class="sub">Successes on a<br>6.</div>
-  </div>
-  <div class="aam-list a">
-    <span class="hd">Gain bonus dice:</span><br>
-    - <b>Teamwork</b> (Combine highest bonuses)<br>
-    - <b>Setup</b> yourself or another:&nbsp; (+1D, -risk, or -hard)<br>
-    - Spend 1 <b>psyche burst</b> to use your powers (+1D)<br>
-    - Use your <b>abilities</b><br>
-    - <b>Bargain</b> with the Admin (Gain a hook or tradeoff)
-  </div>
-  <div class="aam-max a" style="left:505px">...+3 dice maximum</div>
-
-  <!-- ===================== DIVINE AGONY ===================== -->
-  <div class="tpanel agony-panel">
-    <img class="sheen" src="assets/art/tex-plastic-wrap.png" alt="">
-  </div>
-  <img class="art agony-dagger" src="assets/art/art-dagger.png" alt="">
-  <img class="art agony-word blend-m" src="assets/art/word-divine-agony.png" alt="DIVINE AGONY">
-  <div class="agony-list a">
-    <div class="bl">When you take no successes on a roll, gain an affliction, fil out a hook, gain an injury, or an exorcist dies or suffers sin overflow, store a pathos.</div>
-    <div class="bl">Once a session, and once a scene for the whole group, you may burn away all pathos to add one extra die to a roll per pathos burned, stacking with all bonuses.</div>
-  </div>
-  <img class="art agony-stars blend-m" src="assets/art/art-pathos-stars.png" alt="">
-  <!-- centred on the three printed stars (asset centres × 86/163 scale); 22px so the
-       filled circle sits INSIDE the star and the spikes stay visible around it -->
-  <span class="dot bare a" data-key="p1.pathos.1" style="left:745px;top:750px;--dot:22px"></span>
-  <span class="dot bare a" data-key="p1.pathos.2" style="left:723px;top:788px;--dot:22px"></span>
-  <span class="dot bare a" data-key="p1.pathos.3" style="left:767px;top:788px;--dot:22px"></span>
-  <div class="agony-pathos-lbl a">PATHOS</div>
-  <div class="agony-clear a">Clear after session end</div>
-
-  <!-- ===================== //ADVANCEMENT ===================== -->
-  <div class="tpanel adv-panel">
-    <img class="sheen" src="assets/art/tex-plastic-wrap.png" alt="">
-  </div>
-  <div class="adv-head a">//ADVANCEMENT</div>
-  <div class="adv-tm a">tmstandard 067</div>
-  <div class="adv-xp a">XP:</div>
-  <div class="dotrow adv-xp-dots a" data-key="p1.xp" data-count="8" data-dashed-from="5" style="left:568px;top:897px;gap:8px"></div>
-  <div class="adv-advl a">ADVANCES:</div>
-  <div class="dotrow adv-adv-dots a" data-key="p1.adv" data-count="3" style="left:688px;top:922px;gap:16px"></div>
-  <div class="adv-body a">At the end of each session, answer each question,<br>then mark xp. Cash an advance each time this fills.</div>
-  <div class="adv-q a" style="top:998px">&bull; Did you <b>survive?</b></div>
-  <div class="adv-q a" style="top:1013px">&bull; Did you <b>follow your first agenda item?</b></div>
-  <div class="adv-q a" style="top:1028px">&bull; Did you <b>follow at least one bolded agenda item?</b></div>
-  <div class="adv-q a" style="top:1043px">&bull; Did you take an <b>injury</b> or <b>affliction</b>?</div>
-
-  <!-- page footer (bottom-right, faint) -->
-  <div class="foot" style="top:1066px">DOCREF XX0011</div>
-  <div class="foot" style="top:1079px">As above, so below</div>
-
+  <!-- advancement -->
+  <div class="dotrow baredots adv a" data-key="p1.xp"  data-count="8" data-dashed-from="5" data-xs="579.3,607.6,636.3,663.2,693,722.3,750,779.3" style="top:903px"></div>
+  <div class="dotrow baredots adv a" data-key="p1.adv" data-count="3" data-xs="648.5,675.2,702.2" style="top:929.3px"></div>
 </section>
 
-<!--
-  CAIN interactive exorcist sheet — PAGE 2 (#page2)
-  Fan-made recreation of CAINsheets_1.4.pdf p2. Not official; CAIN is by Tom Bloom.
-
-  INTEGRATOR WIRING NOTES (app.js owns all behavior; markup/geometry only here):
-    • #cat-strip  — strip-cat.png (I–V triangles + threshold numbers baked). Five
-                    <span class="cat-hot" data-cat="1..5"> hotspots overlay the triangles.
-                    Wire click → set shared x.cat (1–5) and show the chosen triangle
-                    (e.g. highlight / circle it). Value key: x.cat.
-    • PSYCHE row  — <div class="dotrow" data-key="x.psyche" data-count="3"> (drawn circles).
-    • #burst-dots — <div class="dotrow" data-key="x.burst" data-count="3"> overlaying the
-                    THREE white circles BAKED into panel-burst.png. Generated dots should be
-                    rendered BARE (transparent border) so only the fill shows. (class "baredots" hint.)
-    • KIT POINTS  — <div class="dotrow" data-key="p2.kp" data-count="8" data-dashed-from="6">
-                    (5 solid + 3 dashed circles, counted from the reference).
-    • Kit list    — <div class="ce area" data-key="p2.kit" data-default="…"> — integrator
-                    loads data-default (the printed default kit) into the field on init.
-    • SCRIP       — <span class="ce line" data-key="p2.scrip">.
-    • SIN dots    — ten <span class="dot bare sindot" data-key="x.sin.1..10">: the asset has no
-                    baked holes, so each dot renders its own white circle over an ink blob and
-                    fills black on click (CSS .on).
-    • SIN MARK    — three <div class="ce area" data-key="p2.mark.1|2|3"> (worm / bee / fly boxes).
-    • All .ce fields get contenteditable + load/save by data-key; all .dot/.dotrow JS-filled.
-
-  All coordinates below are CSS px on the 850×1100 sheet, measured from sheet-2.png (÷2).
-  Selectors are all prefixed with #page2 . Relies on shared.css tokens/components.
--->
-<style>
-  /* ---------- generic page-2 helpers ---------- */
-  #page2 .panel { position:absolute; border-radius:8px;
-        box-shadow:2px 3px 6px rgba(0,0,0,.25); overflow:hidden; }
-  #page2 .panel > .tex { position:absolute; inset:0; width:100%; height:100%;
-        object-fit:cover; opacity:.42; mix-blend-mode:multiply; pointer-events:none; }
-  #page2 .panel > * { position:relative; }
-  #page2 .abs { position:absolute; }
-  #page2 .cour { font-family:var(--f-type); color:var(--ink); }
-  #page2 .body { font-family:var(--f-body); color:var(--ink); }
-
-  /* ---------- background art (faint watermark + splatter) ---------- */
-  /* anatomy figure — tall faint nervous-system watermark, right side.
-     asset 851×2080; content is already ~L241 (very light). */
-  #page2 #fig-anatomy { left:415px; top:232px; width:390px; z-index:0;
-        opacity:.82; pointer-events:none; }
-  /* sinseed splatter — asset 1176×2528. Placed so its 10 white holes land where
-     measured (holes span css x471–781, y283–428). left 409 top 226 w 401. */
-  #page2 #splatter { left:409px; top:226px; width:401px; z-index:1; pointer-events:none; }
-
-  /* the ten sin boxes: the splatter asset has NO baked white holes (ink is solid black),
-     so each dot IS the white hole — a white circle punched over a splat blob. Filled state
-     keeps a white rim so the black fill stays readable against the black ink. */
-  #page2 .sindot { position:absolute; --dot:26px; z-index:7; background:#fff; }
-  #page2 .sindot.on { background:#fff; }
-  #page2 .sindot.on::after { content:""; position:absolute; inset:13%; border-radius:50%;
-        background:#141414; }
-
-  /* ================= CAT BAND ================= */
-  /* light-grey taped panel: left 41 top 31 right 827 bottom 128 */
-  #page2 #cat-band { left:39px; top:40px; width:790px; height:78px;
-        background:#e7e6e2; z-index:0; }
-  /* thin registration bracket above the band (decorative) */
-  #page2 #top-bracket { left:135px; top:15px; width:553px; height:15px;
-        border:1px solid #cbcac6; border-bottom:none; z-index:4; }
-  #page2 #cat-word { left:13px; top:3px; font-family:var(--f-disp); color:#141414;
-        font-size:37px; line-height:1; letter-spacing:1px; transform:scaleX(1.1);
-        transform-origin:left; }
-  #page2 #cat-crs  { left:14px; top:39px; font-size:7.5px; color:#5a5a5a;
-        letter-spacing:.02em; font-family:var(--f-body); }
-  #page2 #cat-pcc  { left:14px; top:48px; font-size:7.5px; color:#5a5a5a; font-family:var(--f-body); }
-  #page2 #cat-miss { left:13px; top:57px; font-family:var(--f-disp); color:#2f2f2f;
-        font-size:10px; letter-spacing:.01em; transform:scaleX(1.02); transform-origin:left; }
-  /* strip-cat.png (I–V triangles + 0 1 2 4 7). asset 1056×231 → w 380 (canvas extended
-     +72px so the V triangle's right slope isn't clipped; paper normalized to white).
-     NO z-index: it would create a stacking context that defeats the img's multiply blend,
-     leaving an opaque paper seam over the band. */
-  #page2 #cat-strip { left:210px; top:39px; width:380px; height:83px; }
-  #page2 #cat-strip img { width:100%; height:auto; display:block; }
-  #page2 .cat-hot { position:absolute; top:8px; width:62px; height:56px; cursor:pointer;
-        border-radius:6px; }
-  #page2 .cat-hot:hover { background:rgba(200,26,16,.12); }
-  /* triangle centres measured from strip-cat.png (984px asset → 354px css):
-     strip-local x 49.5, 125, 200, 270.4, ~336 (V is clipped by the asset's right edge) */
-  #page2 .cat-hot.c1 { left:18px; }   /* centre strip-x 49.5 */
-  #page2 .cat-hot.c2 { left:94px; }   /* centre strip-x 125 */
-  #page2 .cat-hot.c3 { left:169px; }  /* centre strip-x 200 */
-  #page2 .cat-hot.c4 { left:239px; }  /* centre strip-x 270 */
-  #page2 .cat-hot.c5 { left:313px; }  /* centre strip-x 344 (full width now the strip is wider) */
-  #page2 #cat-caption { left:546px; top:16px; font-size:8px; line-height:1.35; letter-spacing:.14em; color:#555; }
-  #page2 #cat-eye { left:726px; top:8px; width:38px; height:auto; }
-
-  /* ================= PSYCHE BAND ================= */
-  /* light panel w/ plastic wrap: left 41 top 126 right 495 bottom 224 */
-  #page2 #psyche-band { left:41px; top:126px; width:454px; height:98px;
-        background:#e3e2de; z-index:0; }
-  #page2 #psyche-band .wrap { position:absolute; inset:0; width:100%; height:100%;
-        object-fit:cover; opacity:.5; mix-blend-mode:screen; pointer-events:none; }
-  #page2 #psyche-band .tape { position:absolute; left:150px; top:-8px; width:230px;
-        height:34px; object-fit:cover; opacity:.55; pointer-events:none; }
-  #page2 #psyche-brain { left:66px; top:137px; width:52px; height:auto; z-index:1; }
-  #page2 #psyche-word  { left:128px; top:133px; width:190px; height:auto; z-index:1; }
-  /* three PSYCHE circles, dia 42 — kept clear of the E's tail (word right edge 318) */
-  #page2 #psyche-dots  { left:326px; top:143px; --dot:42px; gap:13px; z-index:2; }
-  #page2 #psyche-dots .dot { border-width:2.4px; }
-  #page2 #psyche-cap1  { left:146px; top:192px; font-size:11px; color:#242424; font-family:var(--f-body); }
-  #page2 #psyche-cap2  { left:146px; top:205px; font-size:11px; color:#161616; font-family:var(--f-body);
-        font-weight:700; }
-
-  /* ================= BURST PANEL ================= */
-  /* panel-burst.png (dark panel + brains + BURST + caption baked). Sits BELOW the CAT
-     band/strip (ref sheet: band bottom ~112, burst top ~118) so it must not cover the
-     V triangle or its threshold number. Opaque asset 870x444 → 300x153. */
-  #page2 #burst { left:537px; top:122px; width:300px; height:auto; z-index:6; }
-  /* dot centres over the baked white circles: img-css (98,74) (167,75) (236,75) */
-  #page2 #burst-dots { position:absolute; left:622px; top:183px; --dot:27px; gap:41px;
-        z-index:7; }
-
-  /* ================= REGISTERED KIT PANEL ================= */
-  /* left 44 top 246 right 437 bottom 887 */
-  #page2 #kit-panel { left:44px; top:246px; width:393px; height:641px;
-        background:#edece7; z-index:5; }
-  #page2 #kit-hdr { position:absolute; left:0; top:5px; width:100%; text-align:center;
-        font-family:var(--f-type); font-weight:700; font-size:16px; color:#5f5f5f;
-        letter-spacing:2px; }
-  #page2 #kit-rule { position:absolute; left:16px; top:26px; width:361px;
-        border-top:1.5px dashed #4a4a4a; }
-  #page2 #kit-pts { position:absolute; left:8px; top:29px; font-family:var(--f-type);
-        font-size:26px; line-height:20px; color:#232323; letter-spacing:.5px; }
-  /* KIT POINTS circles: 5 solid + 3 dashed, first centre css 172 y 307 → local 128,61 */
-  #page2 #kp-dots { position:absolute; left:115px; top:48px; --dot:26px; gap:7.5px; }
-  #page2 #kit-spend { position:absolute; left:8px; top:73px; font-family:var(--f-type);
-        font-size:11px; color:#5c5c5c; }
-  #page2 #kit-desc-lbl { position:absolute; left:8px; top:108px; font-family:var(--f-type);
-        font-size:13px; color:#555; }
-  /* description frame (dotted box): css left 70 top 379 right 402 bottom 822 */
-  #page2 #kit-box { position:absolute; left:26px; top:133px; width:332px; height:443px;
-        border:1.6px dashed #333; border-radius:4px; }
-  #page2 #kit-list { position:absolute; left:40px; top:142px; width:305px; height:420px;
-        font-family:var(--f-hand); font-size:13.5px; line-height:1.5; color:var(--hand-ink);
-        overflow:auto; }
-  /* SCRIP row (box-relative): css baseline ~845 */
-  #page2 #scrip-glyphs { position:absolute; left:18px; top:600px; }
-  #page2 .sq { display:inline-block; width:13px; height:13px; background:#232323;
-        vertical-align:-1px; }
-  #page2 #scrip-dollar { font-family:var(--f-disp); font-size:16px; color:#232323;
-        margin:0 4px; }
-  #page2 #scrip-lbl { position:absolute; left:64px; top:591px; font-family:var(--f-type);
-        font-weight:700; font-size:24px; color:#1e1e1e; letter-spacing:1px; }
-  #page2 #scrip-line { position:absolute; left:172px; top:596px; width:175px;
-        font-size:20px; border-bottom:1.5px solid #8a8a86; }
-  #page2 #scrip-cap { position:absolute; left:18px; top:626px; font-family:var(--f-type);
-        font-size:8.5px; color:#6a6a6a; }
-
-  /* ================= SIN OVERFLOW PANEL ================= */
-  /* dark rounded panel: left 462 top 509 right 810 bottom 650 */
-  #page2 #sin-overflow { position:absolute; left:462px; top:509px; width:348px; height:141px; z-index:6;
-        border-radius:18px; overflow:hidden;
-        background:linear-gradient(135deg,#5a5a5c 0%,#48484a 45%,#3f3f42 100%);
-        box-shadow:2px 3px 7px rgba(0,0,0,.35); }
-  #page2 #so-warn { position:absolute; left:86px; top:4px; width:36px; height:auto; }
-  #page2 #so-title { position:absolute; left:132px; top:5px; font-family:var(--f-anton);
-        color:#fff; font-size:23px; letter-spacing:.5px; }
-  #page2 #so-body { position:absolute; left:15px; top:37px; width:328px;
-        font-family:var(--f-body); font-size:12.5px; line-height:1.32; color:#f4f4f4; }
-  #page2 #so-body b { font-weight:700; color:#fff; }
-
-  /* ================= SIN MARK BOXES ================= */
-  #page2 .sinmark-box { position:absolute; border:1.6px solid #383838;
-        border-radius:22px; background:transparent; z-index:4; }
-  #page2 .sinmark-head { position:absolute; z-index:5; height:44px; }
-  #page2 .sinmark-head img.ic { position:absolute; height:auto; }
-  #page2 .sinmark-head img.word { position:absolute; height:auto; }
-  #page2 .sinmark-box .ce { position:absolute; inset:9px; font-size:15px; }
-  #page2 .evolve { position:absolute; font-family:var(--f-type); font-size:9px;
-        color:#8f8f8f; z-index:5; }
-
-  /* worm — upper box.  box css left 463 top 726 w 353 h 129 ; word "IN MARK" ~124w */
-  #page2 #box-worm { left:463px; top:726px; width:353px; height:129px; }
-  #page2 #head-worm { left:441px; top:696px; width:320px; }
-  #page2 #head-worm .ic   { left:0px;  top:6px;  width:32px; }
-  #page2 #head-worm .word { left:33px; top:1px;  width:152px; }
-  #page2 #evolve-worm { left:645px; top:836px; }
-
-  /* bee — bottom-left box.  box css left 44 top 934 w 388 h 157 */
-  #page2 #box-bee { left:44px; top:934px; width:388px; height:157px; }
-  #page2 #head-bee { left:14px; top:900px; width:320px; }
-  #page2 #head-bee .ic   { left:0px;  top:2px;  width:58px; }
-  #page2 #head-bee .word { left:76px; top:3px;  width:152px; }
-  #page2 #evolve-bee { left:250px; top:1074px; }
-
-  /* fly — bottom-centre box.  box css left 448 top 940 w 360 h 142 */
-  #page2 #box-fly { left:448px; top:940px; width:360px; height:142px; }
-  #page2 #head-fly { left:398px; top:900px; width:320px; }
-  #page2 #head-fly .ic   { left:0px;  top:0px;  width:34px; }
-  #page2 #head-fly .word { left:38px; top:3px;  width:152px; }
-  #page2 #evolve-fly { left:628px; top:1066px; }
-
-  /* ================= FOOTER REFS ================= */
-  #page2 #pg-num { position:absolute; right:20px; top:1012px; font-family:var(--f-type);
-        font-size:13px; color:#7a7a7a; z-index:7; }
-  #page2 #docref { position:absolute; right:20px; top:1065px; font-family:var(--f-type);
-        font-size:9px; color:#8a8a8a; letter-spacing:.04em; z-index:7; }
-  #page2 #aboveblow { position:absolute; right:20px; top:1080px; font-family:var(--f-type);
-        font-size:9px; color:#8a8a8a; letter-spacing:.04em; z-index:7; }
-
-  /* static print never intercepts clicks */
-  #page2 #top-bracket, #page2 #cat-word, #page2 #cat-crs, #page2 #cat-pcc, #page2 #cat-miss,
-  #page2 #cat-caption, #page2 #psyche-cap1, #page2 #psyche-cap2,
-  #page2 #kit-hdr, #page2 #kit-rule, #page2 #kit-pts, #page2 #kit-spend, #page2 #kit-desc-lbl,
-  #page2 #kit-box, #page2 #scrip-glyphs, #page2 #scrip-lbl, #page2 #scrip-cap,
-  #page2 #sin-overflow, #page2 .evolve, #page2 #pg-num, #page2 #docref, #page2 #aboveblow
-  { pointer-events:none; }
-</style>
-
+<!-- ===================== PAGE 2 ===================== -->
 <section class="sheet" id="page2">
+  <img class="page-art" src="assets/art/page-2.webp" alt="Exorcist sheet page 2: category, psyche, burst, registered kit, sin, sin overflow, sin marks">
 
-  <!-- ===== background watermark art ===== -->
-  <img id="fig-anatomy" class="abs" src="assets/art/art-anatomy-figure.png" alt="">
-  <img id="splatter"    class="abs" src="assets/art/art-sinseed-splatter.png" alt="">
+  <!-- CAT: click a triangle to circle it (shared x.cat, also shown on the ID card and page 4) -->
+  <span class="cat-hot" data-cat="1" style="left:226.8px"></span>
+  <span class="cat-hot" data-cat="2" style="left:296.8px"></span>
+  <span class="cat-hot" data-cat="3" style="left:366.3px"></span>
+  <span class="cat-hot" data-cat="4" style="left:431.5px"></span>
+  <span class="cat-hot" data-cat="5" style="left:500.1px"></span>
 
-  <!-- ten sin-box holes: white circles centred on the ink blobs of art-sinseed-splatter.png
-       (max-inscribed-circle centres measured from the asset; dot dia 26 → left/top = centre −13) -->
-  <span class="dot bare sindot" data-key="x.sin.1"  style="left:457px; top:269px;"></span><!-- (470,282) -->
-  <span class="dot bare sindot" data-key="x.sin.2"  style="left:775px; top:288px;"></span><!-- (788,301) -->
-  <span class="dot bare sindot" data-key="x.sin.3"  style="left:708px; top:294px;"></span><!-- (721,307) -->
-  <span class="dot bare sindot" data-key="x.sin.4"  style="left:602px; top:311px;"></span><!-- (615,324) -->
-  <span class="dot bare sindot" data-key="x.sin.5"  style="left:663px; top:325px;"></span><!-- (676,338) -->
-  <span class="dot bare sindot" data-key="x.sin.6"  style="left:496px; top:340px;"></span><!-- (509,353) -->
-  <span class="dot bare sindot" data-key="x.sin.7"  style="left:737px; top:360px;"></span><!-- (750,373) -->
-  <span class="dot bare sindot" data-key="x.sin.8"  style="left:578px; top:371px;"></span><!-- (591,384) -->
-  <span class="dot bare sindot" data-key="x.sin.9"  style="left:648px; top:413px;"></span><!-- (661,426) -->
-  <span class="dot bare sindot" data-key="x.sin.10" style="left:540px; top:421px;"></span><!-- (553,434) -->
+  <div id="psyche-dots" class="dotrow baredots a" data-key="x.psyche" data-count="3" data-xs="357.7,411.5,467"></div>
+  <div id="burst-dots"  class="dotrow baredots a" data-key="x.burst"  data-count="3" data-xs="645.1,710.9,778"></div>
 
-  <!-- ===== CAT band ===== -->
-  <div id="top-bracket" class="abs"></div>
-  <div id="cat-band" class="panel">
-    <img class="tex" src="assets/art/tex-paper-crumpled.png" alt="">
-    <div id="cat-word"  class="abs">CAT</div>
-    <div id="cat-crs"   class="abs cour">CATEGORY RATING SYSTEM</div>
-    <div id="cat-pcc"   class="abs cour">Please circle clearly</div>
-    <div id="cat-miss"  class="abs">MISSIONS SURVIVED:</div>
-    <div id="cat-caption" class="abs cour">CATEGORY AFFECTS THE<br>PARAMETERS AND<br>EFFECTIVENESS OF POWERS</div>
-    <img id="cat-eye" class="abs" src="assets/art/icon-eye-diamond.png" alt="">
-  </div>
-  <!-- CAT strip (integrator wires the 5 hotspots → x.cat) -->
-  <div id="cat-strip" class="abs">
-    <img class="blend-m" src="assets/art/strip-cat.png" alt="Category I–V">
-    <span class="cat-hot c1" data-cat="1"></span>
-    <span class="cat-hot c2" data-cat="2"></span>
-    <span class="cat-hot c3" data-cat="3"></span>
-    <span class="cat-hot c4" data-cat="4"></span>
-    <span class="cat-hot c5" data-cat="5"></span>
-  </div>
+  <!-- the ten sin boxes, centred on the printed white circles -->
+  <span class="dot bare sindot a" data-key="x.sin.1"  style="left:460.6px;top:272.9px"></span>
+  <span class="dot bare sindot a" data-key="x.sin.2"  style="left:770.6px;top:293.3px"></span>
+  <span class="dot bare sindot a" data-key="x.sin.3"  style="left:702.2px;top:298.8px"></span>
+  <span class="dot bare sindot a" data-key="x.sin.4"  style="left:600.4px;top:314.3px"></span>
+  <span class="dot bare sindot a" data-key="x.sin.5"  style="left:658.6px;top:328.6px"></span>
+  <span class="dot bare sindot a" data-key="x.sin.6"  style="left:500.2px;top:345.6px"></span>
+  <span class="dot bare sindot a" data-key="x.sin.7"  style="left:731px;top:362.2px"></span>
+  <span class="dot bare sindot a" data-key="x.sin.8"  style="left:578.3px;top:372.6px"></span>
+  <span class="dot bare sindot a" data-key="x.sin.9"  style="left:646.2px;top:412.8px"></span>
+  <span class="dot bare sindot a" data-key="x.sin.10" style="left:539.3px;top:417.8px"></span>
 
-  <!-- ===== PSYCHE band ===== -->
-  <div id="psyche-band" class="panel">
-    <img class="wrap" src="assets/art/tex-plastic-wrap.png" alt="">
-    <img class="tape" src="assets/art/tex-tape-strip.png" alt="">
-  </div>
-  <img id="psyche-brain" class="abs" src="assets/art/logo-psyche-brain.png" alt="">
-  <img id="psyche-word"  class="abs" src="assets/art/word-psyche.png" alt="Psyche">
-  <div id="psyche-dots" class="dotrow abs" data-key="x.psyche" data-count="3"></div>
-  <div id="psyche-cap1" class="abs body">&frac12; CAT, rounded up.</div>
-  <div id="psyche-cap2" class="abs body">Use for your powers</div>
-
-  <!-- ===== BURST panel (image + 3 overlaid dots) ===== -->
-  <img id="burst" class="abs" src="assets/art/panel-burst.png" alt="Burst">
-  <div id="burst-dots" class="dotrow baredots" data-key="x.burst" data-count="3"></div>
-
-  <!-- ===== REGISTERED KIT panel ===== -->
-  <div id="kit-panel" class="panel">
-    <img class="tex" src="assets/art/tex-paper-crumpled.png" alt="">
-    <div id="kit-hdr">REGISTERED KIT</div>
-    <div id="kit-rule"></div>
-    <div id="kit-pts">KIT<br>POINTS:</div>
-    <div id="kp-dots" class="dotrow" data-key="p2.kp" data-count="8" data-dashed-from="6"></div>
-    <div id="kit-spend">Spend KP to pull out the following items any time:</div>
-    <div id="kit-desc-lbl">Description</div>
-    <div id="kit-box"></div>
-    <div id="kit-list" class="ce area" data-key="p2.kit" data-ph=""
-         data-default="SERVICE WEAPONS (2 KP) (CAT 0, upgrade +1 by spending 3 scrip to max of CAT 3)
+  <!-- registered kit -->
+  <div id="kp-dots" class="dotrow baredots a" data-key="p2.kp" data-count="9" data-dashed-from="6"
+       data-xs="171.3,199.5,228,256.3,283.3,313,342.3,370,399.3"></div>
+  <div id="kit-list" class="ce area a" data-key="p2.kit" data-ph=""
+       data-default="SERVICE WEAPONS (2 KP) (CAT 0, upgrade +1 by spending 3 scrip to max of CAT 3)
 ISSUE UNIFORM (0 KP)
 NOTEBOOK, PEN (1 KP)
 MATCHBOOK (20 MATCHES), CLEAN HANDKERCHIEF (1 KP)"></div>
-    <div id="scrip-glyphs"><span class="sq"></span><span id="scrip-dollar">$</span><span class="sq"></span></div>
-    <div id="scrip-lbl">SCRIP:</div>
-    <span id="scrip-line" class="ce line" data-key="p2.scrip"></span>
-    <div id="scrip-cap">Paid out per mission (5: success, 3: spare, -1: failure, +3 advance)</div>
-  </div>
+  <span id="scrip" class="ce line a" data-key="p2.scrip"></span>
 
-  <!-- ===== SIN OVERFLOW panel ===== -->
-  <div id="sin-overflow">
-    <svg id="so-warn" viewBox="0 0 100 88" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="50,5 96,84 4,84" fill="#ffffff" stroke="#111111" stroke-width="7" stroke-linejoin="round"/>
-      <rect x="45" y="30" width="10" height="30" fill="#111111"/>
-      <rect x="45" y="66" width="10" height="10" fill="#111111"/>
-    </svg>
-    <div id="so-title">!!SIN OVERFLOW!!</div>
-    <div id="so-body"><b>Give up</b> or make a <b>resistance check.</b><br>
-      <b>Resistance:</b> Roll 1d6 and add 1 for each sin mark. Gain a <b>sin mark</b> on a total
-      result of 6 or lower and keep control. A result of 1 always succeeds. On success, clear all
-      sin, gain a sin mark then <b>permanently cross out two boxes.</b> Otherwise, <b>give up.</b></div>
-  </div>
-
-  <!-- ===== SIN MARK boxes ===== -->
-  <!-- worm (upper) -->
-  <div id="head-worm" class="sinmark-head">
-    <img class="ic"   src="assets/art/icon-insect-worm.png" alt="">
-    <img class="word" src="assets/art/word-sinmark.png" alt="in mark">
-  </div>
-  <div id="box-worm" class="sinmark-box">
-    <div class="ce area" data-key="p2.mark.1" data-ph=""></div>
-  </div>
-  <div id="evolve-worm" class="evolve">Evolve with an advance</div>
-
-  <!-- bee (bottom-left) -->
-  <div id="head-bee" class="sinmark-head">
-    <img class="ic"   src="assets/art/icon-insect-bee.png" alt="">
-    <img class="word" src="assets/art/word-sinmark.png" alt="in mark">
-  </div>
-  <div id="box-bee" class="sinmark-box">
-    <div class="ce area" data-key="p2.mark.2" data-ph=""></div>
-  </div>
-  <div id="evolve-bee" class="evolve">Evolve with an advance</div>
-
-  <!-- fly (bottom-centre) -->
-  <div id="head-fly" class="sinmark-head">
-    <img class="ic"   src="assets/art/icon-insect-fly.png" alt="">
-    <img class="word" src="assets/art/word-sinmark.png" alt="in mark">
-  </div>
-  <div id="box-fly" class="sinmark-box">
-    <div class="ce area" data-key="p2.mark.3" data-ph=""></div>
-  </div>
-  <div id="evolve-fly" class="evolve">Evolve with an advance</div>
-
-  <!-- ===== footer refs ===== -->
-  <div id="docref">DOCREF XX0018</div>
-  <div id="aboveblow">As above, so below</div>
-
+  <!-- sin marks: worm (upper), bee (bottom left), fly (bottom right) -->
+  <div id="mark-worm" class="mark ce area a" data-key="p2.mark.1" data-ph=""></div>
+  <div id="mark-bee"  class="mark ce area a" data-key="p2.mark.2" data-ph=""></div>
+  <div id="mark-fly"  class="mark ce area a" data-key="p2.mark.3" data-ph=""></div>
 </section>
 
-<!--
-  PAGE 3 — REGISTERED ABILITIES  (#page3)
-  Integrator wiring needed:
-    - .ac autocomplete fields (data-ac="agenda" | "blasphemy"): make contenteditable + attach the
-      agenda/blasphemy suggestion behavior. Values persist under data-key p3.agenda / p3.blasphemy.
-    - .ce.area / .ce.line: make contenteditable, load/save by data-key.
-        keys: p3.agenda.items, p3.agenda.abilities, p3.passive,
-              p3.power.1 p3.power.2 p3.power.3 p3.power.4 p3.power.5
-    - .tick (data-key p3.passive.t1 / .t2 / .t3): toggle X-slash fill on click.
-  No dotrows / shared strips on this page. Everything else is static print.
-  All coordinates in CSS px on the 850x1100 sheet; measured from sheet-3.png (÷2).
--->
-<style>
-  /* ===== PAGE 3 ===== */
-  #page3 { font-family:var(--f-body); color:var(--ink); }
-  #page3 .abs { position:absolute; }
-
-  /* ---- header ---- */
-  #page3 .logo-cone { position:absolute; left:35px; top:39px; width:23px; height:auto; opacity:.72; }
-  #page3 .cain-word { position:absolute; left:64px; top:52px; font-family:var(--f-disp);
-      font-size:15px; letter-spacing:2px; color:#a2a2a2; }
-  #page3 .doc-title { position:absolute; left:0; right:0; top:44px; text-align:center;
-      font-family:var(--f-type); font-weight:700; font-size:21px; letter-spacing:1.5px; color:#565656; }
-
-  /* ---- big condensed slab headings (Courier bold squeezed to match the print) ---- */
-  #page3 .bighead { position:absolute; font-family:var(--f-type); font-weight:700; font-size:46px;
-      line-height:1; color:#575757; transform-origin:left center; white-space:nowrap; }
-  #page3 #h-agenda { left:78px; top:90px; transform:scaleX(.74); }
-  #page3 #h-blasphemy { left:63px; top:398px; transform:scaleX(.72); }
-
-  /* ---- stickers ---- */
-  #page3 .sticker { position:absolute; box-shadow:2px 3px 6px rgba(0,0,0,.22); }
-  #page3 #stk-agenda { left:202px; top:79px; width:230px; height:43px; transform:rotate(-.4deg); }
-  #page3 #stk-blasphemy { left:262px; top:378px; width:273px; height:72px; transform:rotate(.3deg); }
-
-  /* ---- autocomplete name fields (integrator wires behavior) ---- */
-  #page3 .ac { position:absolute; font-family:var(--f-hand); color:var(--hand-ink);
-      background:transparent; outline:none; cursor:text; white-space:nowrap; overflow:hidden;
-      display:flex; align-items:center; }
-  #page3 #f-agenda { left:216px; top:82px; width:205px; height:38px; font-size:20px; }
-  #page3 #f-blasphemy { left:280px; top:392px; width:240px; height:52px; font-size:24px; }
-
-  /* ---- section captions (tight typewriter) ---- */
-  #page3 .cap { position:absolute; font-family:var(--f-type); font-size:9.5px; color:#6b6b6b; }
-  #page3 #cap-agenda { left:110px; top:127px; line-height:11.5px; }
-  #page3 #cap-blasphemy { left:60px; top:447px; line-height:9.4px; font-size:8.5px; }
-  #page3 .cap b { font-weight:700; color:#4d4d4d; }
-
-  /* ---- light grey field labels ---- */
-  #page3 .flabel { position:absolute; font-family:var(--f-type); font-size:17px;
-      letter-spacing:2px; color:#9c9c9c; }
-  #page3 #lbl-items    { left:163px; top:163px; }
-  #page3 #lbl-abilities{ left:470px; top:90px; }
-
-  /* ---- PASSIVE label ---- */
-  #page3 #lbl-passive { position:absolute; left:60px; top:502px;
-      font-family:var(--f-type); font-weight:700; font-size:14px; letter-spacing:.5px; color:#2f2f2f; }
-
-  /* ---- outlined rounded ce boxes ---- */
-  #page3 .box { position:absolute; border:1.5px solid #2a2a2a; background:transparent; }
-  #page3 .box.ce { padding:10px 12px; font-size:15px; }
-  #page3 #b-items      { left:48px;  top:189px; width:340px; height:174px; border-radius:24px; }
-  #page3 #b-abilities  { left:418px; top:125px; width:382px; height:326px; border-radius:40px; }
-  #page3 #b-passive    { left:49px;  top:517px; width:352px; height:112px; border-radius:20px; }
-  #page3 #b-p1 { left:428px; top:458px; width:352px; height:166px; border-radius:28px; }
-  #page3 #b-p2 { left:48px;  top:642px; width:351px; height:185px; border-radius:28px; }
-  #page3 #b-p3 { left:427px; top:641px; width:351px; height:185px; border-radius:28px; }
-  #page3 #b-p4 { left:48px;  top:846px; width:354px; height:184px; border-radius:28px; }
-  #page3 #b-p5 { left:429px; top:845px; width:352px; height:184px; border-radius:28px; }
-
-  /* ---- rotated OBSERVED POWER side labels ---- */
-  #page3 .oplabel { position:absolute; writing-mode:vertical-rl; transform:rotate(180deg);
-      font-family:var(--f-type); font-weight:700; font-size:14px; letter-spacing:1px;
-      color:#2a2a2a; white-space:nowrap; }
-  #page3 #op1 { left:407px; top:475px; }
-  #page3 #op2 { left:32px;  top:668px; }
-  #page3 #op3 { left:407px; top:667px; }
-  #page3 #op4 { left:32px;  top:874px; }
-  #page3 #op5 { left:407px; top:873px; }
-
-  /* ---- PASSIVE 3-cell tick strip ---- */
-  #page3 #tickstrip { position:absolute; left:291px; top:583px; width:98px; height:35px;
-      border:1.5px solid #2a2a2a; display:flex; }
-  #page3 #tickstrip .tcell { flex:1; height:100%; border:none; border-radius:0; }
-  #page3 #tickstrip .tcell + .tcell { border-left:1.5px dashed #2a2a2a; }
-
-  /* ---- BLAST bubble (static print) ---- */
-  #page3 #blast { position:absolute; left:552px; top:346px; width:256px; height:130px;
-      border-radius:50%; padding:18px 26px 14px 40px;
-      background:radial-gradient(120% 140% at 32% 20%, #f6f6f6 0%, #ececec 60%, #e0e0e0 100%);
-      box-shadow:2px 3px 7px rgba(0,0,0,.20);
-      font-family:var(--f-body); font-size:10.2px; line-height:1.5; color:#1a1a1a; }
-  #page3 #blast b { font-weight:700; }
-
-  /* ---- footer ---- */
-  #page3 #foot-firmly { position:absolute; left:90px; top:1052px;
-      font-family:var(--f-body); font-weight:400; font-size:17px; letter-spacing:.5px; color:#9d9d9d; }
-  #page3 #foot-docref { position:absolute; right:25px; top:1044px; text-align:right;
-      font-family:var(--f-type); font-size:12px; letter-spacing:.5px; color:#8c8c8c; line-height:15px; }
-
-  /* static print never intercepts clicks (#blast overlaps the abilities + power-1 boxes) */
-  #page3 .logo-cone, #page3 .cain-word, #page3 .doc-title, #page3 .bighead, #page3 .cap,
-  #page3 .flabel, #page3 #lbl-passive, #page3 .oplabel, #page3 #blast,
-  #page3 #foot-firmly, #page3 #foot-docref { pointer-events:none; }
-</style>
-
+<!-- ===================== PAGE 3 ===================== -->
 <section class="sheet" id="page3">
+  <img class="page-art" src="assets/art/page-3.webp" alt="Exorcist sheet page 3: registered abilities, agenda, blasphemy, passive, observed powers">
 
-  <!-- header -->
-  <img class="logo-cone" src="assets/art/logo-cain-triangle.png" alt="">
-  <div class="cain-word">C A I N</div>
-  <div class="doc-title">REGISTERED ABILITIES</div>
-
-  <!-- AGENDA -->
-  <div class="bighead" id="h-agenda">AGENDA</div>
-  <img class="sticker" id="stk-agenda" src="assets/art/sticker-oval-white.png" alt="">
-  <div class="ac" id="f-agenda" data-key="p3.agenda" data-ac="agenda"></div>
-  <div class="cap" id="cap-agenda">Describe registered agenda here.<br>Swap agendas between missions. Keep any <b>bolded</b> items.<br>Spend an Advance to gain a new ability. 5 abilities max.</div>
-  <div class="flabel" id="lbl-items">AGENDA ITEMS</div>
-  <div class="box ce area" id="b-items" data-key="p3.agenda.items"></div>
-
-  <!-- AGENDA ABILITIES -->
-  <div class="flabel" id="lbl-abilities">AGENDA ABILITIES</div>
-  <div class="box ce area" id="b-abilities" data-key="p3.agenda.abilities"></div>
-
-  <!-- BLASPHEMY -->
-  <div class="bighead" id="h-blasphemy">BLASPHEMY:</div>
-  <img class="sticker" id="stk-blasphemy" src="assets/art/sticker-rrect-light.png" alt="">
+  <div class="ac" id="f-agenda"    data-key="p3.agenda"    data-ac="agenda"></div>
   <div class="ac" id="f-blasphemy" data-key="p3.blasphemy" data-ac="blasphemy"></div>
-  <div class="cap" id="cap-blasphemy">Describe registered psychic phenomena.<br>Keep sticker attached at all times.<br>Spend an Advance to gain a new power.<br>Spend an Advance to gain a new blasphemy. If you do,<br>gain its passive, cross out a sin box, and increase<br>xp to advance by +1</div>
 
-  <!-- PASSIVE -->
-  <div id="lbl-passive">PASSIVE</div>
-  <div class="box ce area" id="b-passive" data-key="p3.passive"></div>
-  <div id="tickstrip">
-    <span class="tick tcell" data-key="p3.passive.t1"></span>
-    <span class="tick tcell" data-key="p3.passive.t2"></span>
-    <span class="tick tcell" data-key="p3.passive.t3"></span>
-  </div>
+  <div class="box ce area a" id="b-items"     data-key="p3.agenda.items"></div>
+  <div class="box ce area a" id="b-abilities" data-key="p3.agenda.abilities"></div>
+  <div class="box ce area a" id="b-passive"   data-key="p3.passive"></div>
+  <span class="tick bare tcell" data-key="p3.passive.t1" style="left:291.3px;width:32px"></span>
+  <span class="tick bare tcell" data-key="p3.passive.t2" style="left:323.3px;width:31.7px"></span>
+  <span class="tick bare tcell" data-key="p3.passive.t3" style="left:355px;width:34.3px"></span>
 
-  <!-- OBSERVED POWER boxes -->
-  <div class="box ce area" id="b-p1" data-key="p3.power.1"></div>
-  <div class="oplabel" id="op1">OBSERVED POWER</div>
-  <div class="box ce area" id="b-p2" data-key="p3.power.2"></div>
-  <div class="oplabel" id="op2">OBSERVED POWER</div>
-  <div class="box ce area" id="b-p3" data-key="p3.power.3"></div>
-  <div class="oplabel" id="op3">OBSERVED POWER</div>
-  <div class="box ce area" id="b-p4" data-key="p3.power.4"></div>
-  <div class="oplabel" id="op4">OBSERVED POWER</div>
-  <div class="box ce area" id="b-p5" data-key="p3.power.5"></div>
-  <div class="oplabel" id="op5">OBSERVED POWER</div>
+  <div class="box ce area a" id="b-p1" data-key="p3.power.1"></div>
+  <div class="box ce area a" id="b-p2" data-key="p3.power.2"></div>
+  <div class="box ce area a" id="b-p3" data-key="p3.power.3"></div>
+  <div class="box ce area a" id="b-p4" data-key="p3.power.4"></div>
+  <div class="box ce area a" id="b-p5" data-key="p3.power.5"></div>
+</section>
 
-  <!-- BLAST bubble (static) -->
-  <div id="blast"><b>BLAST:</b> Spend a <b>psyche burst</b> and roll <b>PSYCHE</b> to produce a weaponized form of concentrated psychic energy in melee or short range. The specific look and feel of this basic exorcist skill varies between exorcists. The strength of this blast scales with CAT.</div>
-
-  <!-- footer -->
-  <div id="foot-firmly">FIRMLY AFFIX ALL STICKERS</div>
-  <div id="foot-docref">DOCREF XX0012<br>As above, so below</div>
-
+<!-- ===================== PAGE 4 ===================== -->
+<section class="sheet" id="page4">
+  <img class="page-art" src="assets/art/page-4.webp" alt="Exorcist sheet page 4: category reference chart, CAT 0 to VII by people, size, area, range, speed and magnitude">
+  <div id="cat-col" class="a"></div>
 </section>
 
 <div id="site-footer">
-  Fan-made interactive exorcist sheet — not official. CAIN is by Tom Bloom.<br>
-  Everything autosaves in this browser. EXPORT for a portable backup.
+  Fan-made interactive exorcist sheet, not official. CAIN is by Tom Bloom; sheet art from CAINsheets 1.4.5.<br>
+  Everything autosaves in this browser. EXPORT for a portable backup. PRINT to export pages.<br>
+  Right-click a sin box to cross it out for good. Right-click the execution strip to undo a slash.
 </div>
 
 <script src="app.js"></script>
