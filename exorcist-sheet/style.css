@@ -80,9 +80,9 @@ body { margin:0; padding:34px 0 60px; font-family:var(--f-type); color:var(--ink
 /* CAT */
 .cat-hot { cursor:pointer; position:absolute; }
 .cat-hot:hover { background:rgba(184,22,12,.07); border-radius:8px; }
-#idcat { font-family:var(--f-brush); color:#b8160c; display:flex; align-items:center;
-  justify-content:center; border-radius:50%; cursor:pointer; }
+#idcat { display:flex; align-items:center; justify-content:center; border-radius:50%; cursor:pointer; }
 #idcat:hover { background:rgba(184,22,12,.07); }
+#idcat.set, #idcat.set:hover { background:#2f2b2b; }
 #idcat:focus-within { box-shadow:0 0 0 2px rgba(184,22,12,.35); }
 /* the native select sits invisibly over the circle, so a click opens the drop-down */
 #idcat-pick { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer;

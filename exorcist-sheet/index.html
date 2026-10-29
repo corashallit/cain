@@ -32,8 +32,10 @@
   #page1 .cf { font-size:15px; line-height:16px; height:17px; }
   #page1 .cf.ac { font-size:13px; line-height:14px; height:14px; }
   #page1 #idphoto { left:78px; top:86px; width:145px; height:181px; }
-  #page1 #idcat   { left:378px; top:90px; width:65px; height:65px; font-size:34px; }
-  #page1 #idcat-mark { pointer-events:none; }
+  /* a set CAT fills the printed circle (outer edge 66.7px across, centre 410,123) */
+  #page1 #idcat   { left:376.3px; top:89.3px; width:67.4px; height:67.4px; }
+  #page1 #idcat-mark { pointer-events:none; display:flex; }
+  #page1 #idcat-mark svg { height:32px; fill:#ece6e6; }
   #page1 #exec-hit { left:22px; top:334px; width:441px; height:47px; }
   #page1 #exec-talisman { left:83px; top:341px; width:26px; height:25px; }
   #page1 .inj { --dot:25px; top:462.5px; }
